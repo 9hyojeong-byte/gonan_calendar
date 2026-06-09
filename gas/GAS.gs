@@ -39,6 +39,14 @@ function makeResponse(result, callback) {
     .setMimeType(ContentService.MimeType.JSON);
 }
 
+// 시트에서 날짜 셀을 읽으면 Date 객체로 오는 경우가 있어 yyyy-MM-dd 로 강제 변환
+function fmtDate(val) {
+  if (val instanceof Date && !isNaN(val)) {
+    return Utilities.formatDate(val, Session.getScriptTimeZone(), 'yyyy-MM-dd');
+  }
+  return String(val);
+}
+
 function getAllRows(sheet) {
   const lastRow = sheet.getLastRow();
   if (lastRow <= 1) return [];
@@ -46,8 +54,8 @@ function getAllRows(sheet) {
     .filter(r => r[0] !== '')
     .map(r => ({
       id:        String(r[0]),
-      startDate: String(r[1]),
-      endDate:   String(r[2]),
+      startDate: fmtDate(r[1]),
+      endDate:   fmtDate(r[2]),
       title:     String(r[3]),
       content:   String(r[4]),
       pwHash:    String(r[5]),
