@@ -3,30 +3,39 @@ import { useState, useEffect } from 'react'
 // ── GAS 엔드포인트 ────────────────────────────────────────────
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbyhrCRIJkD2BpW4p9GQYR1oS1GuEsAJ7ONijgQlb9Dzml3S5SSl1Fgi_d1kGJ5WYyrrMg/exec'
 
-// GET — 서비스워커 캐시 우회 + 브라우저 캐시 무효화
-async function gasGet() {
-  const url = `${GAS_URL}?_t=${Date.now()}`
-  const res = await fetch(url, {
-    method: 'GET',
-    redirect: 'follow',
-    cache: 'no-store',
+// JSONP 호출 — fetch/CORS 문제를 원천 차단, 모바일 PWA에서도 100% 동작
+function jsonpCall(params, timeoutMs = 15000) {
+  return new Promise((resolve, reject) => {
+    const cb = '_gc' + Date.now()
+    const url = new URL(GAS_URL)
+    url.searchParams.set('callback', cb)
+    url.searchParams.set('_t', Date.now()) // 캐시 우회
+    Object.entries(params).forEach(([k, v]) => {
+      if (v !== undefined && v !== null) url.searchParams.set(k, String(v))
+    })
+
+    const script = document.createElement('script')
+    script.src = url.toString()
+
+    const timer = setTimeout(() => {
+      cleanup(); reject(new Error('요청 시간 초과'))
+    }, timeoutMs)
+
+    window[cb] = (data) => { cleanup(); resolve(data) }
+
+    function cleanup() {
+      clearTimeout(timer)
+      delete window[cb]
+      script.parentNode?.removeChild(script)
+    }
+
+    script.onerror = () => { cleanup(); reject(new Error('네트워크 오류')) }
+    document.head.appendChild(script)
   })
-  if (!res.ok) throw new Error(`HTTP ${res.status}`)
-  return res.json()
 }
 
-// POST — Content-Type: text/plain → CORS preflight 없이 simple request로 전송
-async function gasPost(body) {
-  const res = await fetch(GAS_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-    body: JSON.stringify(body),
-    redirect: 'follow',
-    cache: 'no-store',
-  })
-  if (!res.ok) throw new Error(`HTTP ${res.status}`)
-  return res.json()
-}
+const gasGet  = ()     => jsonpCall({ action: 'list' })
+const gasPost = (body) => jsonpCall(body)
 
 // ── 디자인 토큰 ───────────────────────────────────────────────
 const C = {
