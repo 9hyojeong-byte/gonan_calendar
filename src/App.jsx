@@ -1,5 +1,93 @@
 import { useState, useEffect, useCallback } from 'react'
 
+// ── PWA 설치 유도 배너 ────────────────────────────────────────
+function useInstallPrompt() {
+  const [prompt, setPrompt] = useState(null)
+  const [isIOS, setIsIOS] = useState(false)
+  const [dismissed, setDismissed] = useState(
+    () => localStorage.getItem('pwa_install_dismissed') === '1'
+  )
+  const isInstalled = window.matchMedia('(display-mode: standalone)').matches
+    || window.navigator.standalone === true
+
+  useEffect(() => {
+    if (isInstalled || dismissed) return
+    const ios = /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream
+    setIsIOS(ios)
+    const handler = (e) => { e.preventDefault(); setPrompt(e) }
+    window.addEventListener('beforeinstallprompt', handler)
+    return () => window.removeEventListener('beforeinstallprompt', handler)
+  }, [isInstalled, dismissed])
+
+  const install = async () => {
+    if (!prompt) return
+    prompt.prompt()
+    const { outcome } = await prompt.userChoice
+    if (outcome === 'accepted') dismiss()
+    else setPrompt(null)
+  }
+
+  const dismiss = () => {
+    localStorage.setItem('pwa_install_dismissed', '1')
+    setDismissed(true)
+    setPrompt(null)
+  }
+
+  const show = !isInstalled && !dismissed && (prompt || isIOS)
+  return { show, isIOS, install, dismiss }
+}
+
+function InstallBanner({ isIOS, onInstall, onDismiss }) {
+  return (
+    <div style={{
+      position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 9999,
+      background: '#fff',
+      borderTop: '1px solid #d8f3dc',
+      boxShadow: '0 -4px 24px rgba(45,106,79,0.15)',
+      padding: '16px 20px 20px',
+      display: 'flex', flexDirection: 'column', gap: 12,
+      maxWidth: 480, margin: '0 auto',
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <div style={{
+          width: 48, height: 48, borderRadius: 12, overflow: 'hidden', flexShrink: 0,
+          background: 'linear-gradient(135deg,#2d6a4f,#52b788)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: 26,
+        }}>✈️</div>
+        <div>
+          <div style={{ fontWeight: 700, fontSize: 15, color: '#1b4332' }}>고난크루 앱 설치</div>
+          <div style={{ fontSize: 13, color: '#555', marginTop: 2 }}>홈 화면에 추가하면 더 편리해요</div>
+        </div>
+        <button onClick={onDismiss} style={{
+          marginLeft: 'auto', fontSize: 20, color: '#aaa', padding: 4,
+        }}>✕</button>
+      </div>
+
+      {isIOS ? (
+        <div style={{
+          background: '#f0faf3', borderRadius: 12, padding: '12px 14px',
+          fontSize: 13, color: '#2d6a4f', lineHeight: 1.6,
+        }}>
+          Safari 하단의 <strong>공유 버튼(</strong>
+          <span style={{ fontSize: 15 }}>⬆️</span>
+          <strong>)</strong>을 누른 후<br />
+          <strong>"홈 화면에 추가"</strong>를 선택하세요
+        </div>
+      ) : (
+        <button onClick={onInstall} style={{
+          background: 'linear-gradient(135deg,#2d6a4f,#52b788)',
+          color: '#fff', fontWeight: 700, fontSize: 15,
+          borderRadius: 12, padding: '13px 0',
+          width: '100%',
+        }}>
+          홈 화면에 추가하기
+        </button>
+      )}
+    </div>
+  )
+}
+
 function useIsDesktop() {
   const [is, setIs] = useState(() => window.innerWidth >= 768)
   useEffect(() => {
@@ -767,6 +855,7 @@ export default function App() {
   }
 
   const isDesktop = useIsDesktop()
+  const { show: showInstall, isIOS, install, dismiss: dismissInstall } = useInstallPrompt()
 
   const onBack = view === VIEW.DETAIL
     ? () => setView(VIEW.CALENDAR)
@@ -905,6 +994,9 @@ export default function App() {
         />
       )}
       {toast && <Toast msg={toast} />}
+      {showInstall && (
+        <InstallBanner isIOS={isIOS} onInstall={install} onDismiss={dismissInstall} />
+      )}
     </div>
   )
 }
