@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 
 // ── GAS 엔드포인트 ────────────────────────────────────────────
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbzegkzPYmx3wG5tA1FL-mxrr6kkRN7XV-mOFHGMBIVfWANn3vljFXw83o5xtZAYK7rTCg/exec'
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbwHypzkPY72Z5N0Su9CuLIUUze6X0oVlVO4-DA-vfSLaM75D-hllhRc2vPfLUdxTgJVvw/exec'
 
 // JSONP 호출 — fetch/CORS 문제를 원천 차단, 모바일 PWA에서도 100% 동작
 function jsonpCall(params, timeoutMs = 15000) {
