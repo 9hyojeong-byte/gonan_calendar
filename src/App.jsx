@@ -1,4 +1,14 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
+
+function useIsDesktop() {
+  const [is, setIs] = useState(() => window.innerWidth >= 768)
+  useEffect(() => {
+    const h = () => setIs(window.innerWidth >= 768)
+    window.addEventListener('resize', h)
+    return () => window.removeEventListener('resize', h)
+  }, [])
+  return is
+}
 
 // ── GAS 엔드포인트 ────────────────────────────────────────────
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbwHypzkPY72Z5N0Su9CuLIUUze6X0oVlVO4-DA-vfSLaM75D-hllhRc2vPfLUdxTgJVvw/exec'
@@ -101,35 +111,57 @@ const DAYS_KR = ['일', '월', '화', '수', '목', '금', '토']
 const MAX_SLOTS = 3
 
 // ── 헤더 ─────────────────────────────────────────────────────
-function Header({ view, onBack, onAdd }) {
+function Header({ view, onBack, onAdd, isDesktop }) {
   const isCalendar = view === VIEW.CALENDAR
   return (
-    <div style={{ background: C.grad, padding: '14px 20px', position: 'sticky', top: 0, zIndex: 10 }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <button onClick={onBack} style={{
-          width: 38, height: 38, borderRadius: '50%',
-          background: onBack ? 'rgba(255,255,255,0.2)' : 'transparent',
-          color: C.white, fontSize: 18,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          opacity: onBack ? 1 : 0, pointerEvents: onBack ? 'auto' : 'none',
-        }}>←</button>
-        {isCalendar ? (
+    <div style={{
+      background: C.grad, padding: isDesktop ? '16px 40px' : '14px 20px',
+      position: 'sticky', top: 0, zIndex: 10,
+    }}>
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        maxWidth: isDesktop ? 1200 : '100%', margin: '0 auto',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <button onClick={onBack} style={{
+            width: 38, height: 38, borderRadius: '50%',
+            background: onBack ? 'rgba(255,255,255,0.2)' : 'transparent',
+            color: C.white, fontSize: 18,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            opacity: onBack ? 1 : 0, pointerEvents: onBack ? 'auto' : 'none',
+          }}>←</button>
+          {isCalendar && isDesktop && (
+            <div>
+              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.65)', letterSpacing: 2 }}>✈️ GONAN CREW</div>
+              <div style={{ fontSize: 22, fontWeight: 800, color: C.white, letterSpacing: '-0.5px', marginTop: 1 }}>여행 캘린더</div>
+            </div>
+          )}
+        </div>
+
+        {isCalendar && !isDesktop && (
           <div style={{ textAlign: 'center' }}>
             <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)', letterSpacing: 2, marginBottom: 2 }}>✈️ GONAN CREW</div>
             <div style={{ fontSize: 20, fontWeight: 800, color: C.white, letterSpacing: '-0.5px' }}>여행 캘린더</div>
           </div>
-        ) : (
-          <span style={{ fontWeight: 700, fontSize: 17, color: C.white }}>
+        )}
+        {!isCalendar && (
+          <span style={{ fontWeight: 700, fontSize: isDesktop ? 20 : 17, color: C.white }}>
             {view === VIEW.DETAIL ? '여행 상세' : '일정 등록'}
           </span>
         )}
+
         <button onClick={onAdd} style={{
-          width: 38, height: 38, borderRadius: '50%',
+          width: isDesktop ? 44 : 38, height: isDesktop ? 44 : 38,
+          borderRadius: isDesktop ? 14 : '50%',
           background: onAdd ? 'rgba(255,255,255,0.25)' : 'transparent',
-          color: C.white, fontSize: 22,
+          color: C.white, fontSize: isDesktop ? 16 : 22,
+          fontWeight: isDesktop ? 700 : 300,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
+          gap: 4,
           opacity: onAdd ? 1 : 0, pointerEvents: onAdd ? 'auto' : 'none',
-        }}>+</button>
+        }}>
+          {isDesktop ? <>＋ 일정 등록</> : '+'}
+        </button>
       </div>
     </div>
   )
@@ -159,7 +191,7 @@ function Spinner({ fullPage }) {
 }
 
 // ── 캘린더 ───────────────────────────────────────────────────
-function Calendar({ year, month, events, selectedDate, onSelectDate, onMonthChange }) {
+function Calendar({ year, month, events, selectedDate, onSelectDate, onMonthChange, isDesktop }) {
   const today = todayStr()
   const firstDay = new Date(year, month, 1).getDay()
   const daysInMonth = new Date(year, month + 1, 0).getDate()
@@ -180,7 +212,8 @@ function Calendar({ year, month, events, selectedDate, onSelectDate, onMonthChan
 
   return (
     <div style={{
-      margin: '12px 16px 0', borderRadius: 20,
+      margin: isDesktop ? '0' : '12px 16px 0',
+      borderRadius: isDesktop ? 20 : 20,
       background: C.white, boxShadow: '0 4px 20px rgba(45,106,79,0.12)',
     }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 8px 10px' }}>
@@ -223,7 +256,7 @@ function Calendar({ year, month, events, selectedDate, onSelectDate, onMonthChan
 
           return (
             <div key={dateStr} onClick={() => hasEvents && onSelectDate(dateStr)} style={{
-              height: 62, position: 'relative',
+              height: isDesktop ? 72 : 62, position: 'relative',
               cursor: hasEvents ? 'pointer' : 'default',
             }}>
               <div style={{
@@ -287,15 +320,17 @@ function EventList({ date, events, onSelect }) {
   if (!date || filtered.length === 0) return (
     <div style={{ textAlign: 'center', padding: '48px 24px', color: C.textMuted }}>
       <div style={{ fontSize: 40, marginBottom: 12 }}>🗺️</div>
-      <div style={{ fontWeight: 600, marginBottom: 6, color: C.textSub }}>아직 여행 일정이 없어요</div>
-      <div style={{ fontSize: 13 }}>우상단 + 버튼으로 첫 여행을 등록해보세요!</div>
+      <div style={{ fontWeight: 600, marginBottom: 6, color: C.textSub }}>
+        {date ? '이 날짜엔 일정이 없어요' : '날짜를 클릭해 일정을 확인하세요'}
+      </div>
+      {!date && <div style={{ fontSize: 13 }}>+ 버튼으로 새 여행을 등록할 수 있어요</div>}
     </div>
   )
 
   const { m, d, dowKr } = formatDate(date)
 
   return (
-    <div style={{ padding: '20px 16px 100px' }}>
+    <div style={{ padding: '16px 16px 24px' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
         <div style={{
           background: C.grad, color: C.white, borderRadius: 12,
@@ -729,6 +764,8 @@ export default function App() {
     }
   }
 
+  const isDesktop = useIsDesktop()
+
   const onBack = view === VIEW.DETAIL
     ? () => setView(VIEW.CALENDAR)
     : view === VIEW.FORM
@@ -736,46 +773,122 @@ export default function App() {
     : null
   const onAdd = view === VIEW.CALENDAR ? handleAddClick : null
 
+  // 데스크탑: 캘린더 화면은 2컬럼, 폼/상세는 중앙 카드
+  const desktopCardStyle = {
+    maxWidth: 680, margin: '40px auto', width: '100%',
+    background: C.white, borderRadius: 24,
+    boxShadow: '0 8px 40px rgba(45,106,79,0.13)',
+    overflow: 'hidden',
+  }
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100svh', background: C.bg }}>
-      <Header view={view} onBack={onBack} onAdd={onAdd} />
+      <Header view={view} onBack={onBack} onAdd={onAdd} isDesktop={isDesktop} />
 
       <div style={{ flex: 1, overflowY: 'auto' }}>
         {loading ? (
           <Spinner fullPage />
         ) : (
           <>
-            {view === VIEW.CALENDAR && (
+            {view === VIEW.CALENDAR && !isDesktop && (
               <>
                 <Calendar
                   year={year} month={month} events={events}
                   selectedDate={selectedDate}
                   onSelectDate={handleSelectDate}
                   onMonthChange={handleMonthChange}
+                  isDesktop={false}
                 />
                 <div style={{ marginTop: 20 }}>
                   <EventList date={selectedDate} events={events} onSelect={handleSelectEvent} />
                 </div>
               </>
             )}
-            {view === VIEW.DETAIL && selectedEvent && (
-              <EventDetail
-                event={selectedEvent}
-                onEdit={() => setPwModal({ action: 'edit' })}
-                onDelete={() => setPwModal({ action: 'delete' })}
-              />
+
+            {view === VIEW.CALENDAR && isDesktop && (
+              <div style={{
+                maxWidth: 1200, margin: '0 auto', padding: '32px 40px 60px',
+                display: 'grid', gridTemplateColumns: '1fr 420px', gap: 28, alignItems: 'start',
+              }}>
+                {/* 왼쪽: 캘린더 */}
+                <Calendar
+                  year={year} month={month} events={events}
+                  selectedDate={selectedDate}
+                  onSelectDate={handleSelectDate}
+                  onMonthChange={handleMonthChange}
+                  isDesktop={true}
+                />
+                {/* 오른쪽: 일정 목록 패널 */}
+                <div style={{
+                  background: C.white, borderRadius: 20,
+                  boxShadow: '0 4px 20px rgba(45,106,79,0.10)',
+                  minHeight: 480, overflow: 'hidden',
+                }}>
+                  <div style={{
+                    background: C.grad, padding: '20px 24px',
+                    fontSize: 15, fontWeight: 700, color: C.white,
+                  }}>
+                    {selectedDate ? (() => {
+                      const { m, d, dowKr } = formatDate(selectedDate)
+                      const cnt = events.filter(ev => eventCoversDate(ev, selectedDate)).length
+                      return `${m}월 ${d}일 (${dowKr}) · ${cnt}개`
+                    })() : '날짜를 선택하세요'}
+                  </div>
+                  <div style={{ padding: '0 0 24px' }}>
+                    <EventList date={selectedDate} events={events} onSelect={handleSelectEvent} />
+                  </div>
+                </div>
+              </div>
             )}
+
+            {view === VIEW.DETAIL && selectedEvent && (
+              isDesktop ? (
+                <div style={{ maxWidth: 1200, margin: '0 auto', padding: '32px 40px' }}>
+                  <div style={desktopCardStyle}>
+                    <EventDetail
+                      event={selectedEvent}
+                      onEdit={() => setPwModal({ action: 'edit' })}
+                      onDelete={() => setPwModal({ action: 'delete' })}
+                    />
+                  </div>
+                </div>
+              ) : (
+                <EventDetail
+                  event={selectedEvent}
+                  onEdit={() => setPwModal({ action: 'edit' })}
+                  onDelete={() => setPwModal({ action: 'delete' })}
+                />
+              )
+            )}
+
             {view === VIEW.FORM && (
-              <EventForm
-                initialDate={selectedDate}
-                editEvent={editingEvent}
-                onSave={handleSaveEvent}
-                submitting={submitting}
-                onCancel={() => {
-                  if (editingEvent) { setView(VIEW.DETAIL); setEditingEvent(null) }
-                  else setView(VIEW.CALENDAR)
-                }}
-              />
+              isDesktop ? (
+                <div style={{ maxWidth: 1200, margin: '0 auto', padding: '32px 40px' }}>
+                  <div style={desktopCardStyle}>
+                    <EventForm
+                      initialDate={selectedDate}
+                      editEvent={editingEvent}
+                      onSave={handleSaveEvent}
+                      submitting={submitting}
+                      onCancel={() => {
+                        if (editingEvent) { setView(VIEW.DETAIL); setEditingEvent(null) }
+                        else setView(VIEW.CALENDAR)
+                      }}
+                    />
+                  </div>
+                </div>
+              ) : (
+                <EventForm
+                  initialDate={selectedDate}
+                  editEvent={editingEvent}
+                  onSave={handleSaveEvent}
+                  submitting={submitting}
+                  onCancel={() => {
+                    if (editingEvent) { setView(VIEW.DETAIL); setEditingEvent(null) }
+                    else setView(VIEW.CALENDAR)
+                  }}
+                />
+              )
             )}
           </>
         )}
