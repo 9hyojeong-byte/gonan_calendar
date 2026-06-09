@@ -151,11 +151,13 @@ function Header({ view, onBack, onAdd, isDesktop }) {
         )}
 
         <button onClick={onAdd} style={{
-          width: isDesktop ? 44 : 38, height: isDesktop ? 44 : 38,
+          width: isDesktop ? 'auto' : 38, height: isDesktop ? 44 : 38,
+          padding: isDesktop ? '0 20px' : 0,
           borderRadius: isDesktop ? 14 : '50%',
           background: onAdd ? 'rgba(255,255,255,0.25)' : 'transparent',
-          color: C.white, fontSize: isDesktop ? 16 : 22,
+          color: C.white, fontSize: isDesktop ? 15 : 22,
           fontWeight: isDesktop ? 700 : 300,
+          whiteSpace: 'nowrap',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           gap: 4,
           opacity: onAdd ? 1 : 0, pointerEvents: onAdd ? 'auto' : 'none',
