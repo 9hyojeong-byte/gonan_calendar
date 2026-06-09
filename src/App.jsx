@@ -3,19 +3,28 @@ import { useState, useEffect } from 'react'
 // ── GAS 엔드포인트 ────────────────────────────────────────────
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbyhrCRIJkD2BpW4p9GQYR1oS1GuEsAJ7ONijgQlb9Dzml3S5SSl1Fgi_d1kGJ5WYyrrMg/exec'
 
+// GET — 서비스워커 캐시 우회 + 브라우저 캐시 무효화
 async function gasGet() {
-  const res = await fetch(GAS_URL, { redirect: 'follow' })
+  const url = `${GAS_URL}?_t=${Date.now()}`
+  const res = await fetch(url, {
+    method: 'GET',
+    redirect: 'follow',
+    cache: 'no-store',
+  })
+  if (!res.ok) throw new Error(`HTTP ${res.status}`)
   return res.json()
 }
 
-// Content-Type: text/plain → CORS preflight 없이 POST 가능
+// POST — Content-Type: text/plain → CORS preflight 없이 simple request로 전송
 async function gasPost(body) {
   const res = await fetch(GAS_URL, {
     method: 'POST',
-    headers: { 'Content-Type': 'text/plain' },
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
     body: JSON.stringify(body),
     redirect: 'follow',
+    cache: 'no-store',
   })
+  if (!res.ok) throw new Error(`HTTP ${res.status}`)
   return res.json()
 }
 

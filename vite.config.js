@@ -13,8 +13,8 @@ export default defineConfig({
         name: '고난크루',
         short_name: '고난크루',
         description: '고난크루 모임 일정 캘린더',
-        theme_color: '#FF6B35',
-        background_color: '#ffffff',
+        theme_color: '#2d6a4f',
+        background_color: '#f0faf3',
         display: 'standalone',
         orientation: 'portrait',
         start_url: '/',
@@ -26,6 +26,13 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg}'],
+        // GAS URL은 서비스워커가 절대 캐싱하지 않고 항상 네트워크 직접 호출
+        runtimeCaching: [
+          {
+            urlPattern: /^https:\/\/script\.google\.com\/.*/,
+            handler: 'NetworkOnly',
+          },
+        ],
       },
     }),
   ],
