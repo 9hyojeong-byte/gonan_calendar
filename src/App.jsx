@@ -413,7 +413,7 @@ function Calendar({ year, month, events, selectedDate, onSelectDate, onMonthChan
               key={dateStr}
               onClick={() => onSelectDate(dateStr)}
               className="day-cell-clickable"
-              style={{ height: isDesktop ? 70 : 62, position: 'relative', cursor: 'pointer' }}
+              style={{ height: isDesktop ? 76 : 68, position: 'relative', cursor: 'pointer' }}
             >
               <div style={{
                 position: 'absolute', top: 4, left: '50%', transform: 'translateX(-50%)',
@@ -437,9 +437,9 @@ function Calendar({ year, month, events, selectedDate, onSelectDate, onMonthChan
                 return (
                   <div key={ev.id} style={{
                     position: 'absolute',
-                    top: 36 + slotIdx * 8, height: 5,
-                    left: isActualStart ? 5 : isRowStart ? 2 : 0,
-                    right: isActualEnd ? 5 : isRowEnd ? 2 : 0,
+                    top: 34 + slotIdx * 11, height: 10,
+                    left: isActualStart ? 3 : isRowStart ? 1 : 0,
+                    right: isActualEnd ? 3 : isRowEnd ? 1 : 0,
                     background: getEventColor(ev),
                     borderRadius: [
                       isActualStart ? 3 : 0,
@@ -448,7 +448,20 @@ function Calendar({ year, month, events, selectedDate, onSelectDate, onMonthChan
                       isActualStart ? 3 : 0,
                     ].map(v => v + 'px').join(' '),
                     zIndex: 1,
-                  }} />
+                    overflow: 'hidden',
+                    display: 'flex', alignItems: 'center',
+                    paddingLeft: isActualStart ? 4 : 2,
+                    paddingRight: 2,
+                  }}>
+                    {isActualStart && (
+                      <span style={{
+                        fontSize: 8, fontWeight: 700, color: '#fff',
+                        whiteSpace: 'nowrap', overflow: 'hidden',
+                        textOverflow: 'ellipsis', lineHeight: 1,
+                        fontFamily: "'Noto Sans KR', sans-serif",
+                      }}>{ev.title}</span>
+                    )}
+                  </div>
                 )
               })}
 
