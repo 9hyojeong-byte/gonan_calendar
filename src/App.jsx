@@ -284,20 +284,25 @@ function Spinner({ fullPage }) {
   const emoji = TRAVEL_EMOJIS[Math.floor(Math.random() * TRAVEL_EMOJIS.length)]
   const inner = (
     <div style={{ textAlign: 'center', padding: 40 }}>
-      <div style={{
-        width: 80, height: 80, borderRadius: '50%',
-        border: '3px solid #2d2d2d',
-        boxShadow: '4px 4px 0px 0px #2d2d2d',
-        background: '#fff',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        margin: '0 auto 20px',
-      }}>
-        <span style={{ fontSize: 36, display: 'inline-block', animation: 'bounce-gentle 0.8s ease-in-out infinite' }}>
-          {emoji}
-        </span>
+      <div style={{ position: 'relative', width: 64, height: 64, margin: '0 auto 20px' }}>
+        {/* 회전하는 테두리 링 */}
+        <div style={{
+          width: 64, height: 64, borderRadius: '50%',
+          border: '5px solid #c7d2fe',
+          borderTopColor: '#4f46e5',
+          borderRightColor: '#4f46e5',
+          animation: 'spin 1s linear infinite',
+        }} />
+        {/* 중앙 통통 튀는 이모지 */}
+        <span style={{
+          position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: 26,
+          animation: 'bounce-gentle 0.8s ease-in-out infinite',
+        }}>{emoji}</span>
       </div>
       <p style={{ fontSize: 15, color: '#888', fontFamily: "'Noto Sans KR', sans-serif", margin: 0 }}>
-        불러오는 중... ✏️
+        고난과 함께! 이번엔 어디로 갈까? ✏️
       </p>
     </div>
   )
