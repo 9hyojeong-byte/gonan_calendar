@@ -289,7 +289,7 @@ function Spinner({ fullPage }) {
     <div style={{ textAlign: 'center', padding: 40 }}>
       <style>{`
         @keyframes _spin { to { transform: rotate(360deg) } }
-        @keyframes _bounce { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-6px) } }
+        @keyframes _bounce { 0%,100% { transform: translate(-50%,-50%) translateY(0) } 50% { transform: translate(-50%,-50%) translateY(-6px) } }
         .sp-ring { animation: _spin 1s linear infinite !important; }
         .sp-emoji { animation: _bounce 0.8s ease-in-out infinite !important; }
       `}</style>
@@ -301,9 +301,12 @@ function Spinner({ fullPage }) {
           borderRightColor: '#4f46e5',
         }} />
         <span className="sp-emoji" style={{
-          position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+          position: 'absolute',
+          top: '50%', left: '50%',
+          transform: 'translate(-50%, -50%)',
+          fontSize: 26, lineHeight: 1,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 26,
+          width: 32, height: 32,
         }}>{emoji}</span>
       </div>
       <p style={{ fontSize: 15, color: '#888', fontFamily: "'Noto Sans KR', sans-serif", margin: 0 }}>
