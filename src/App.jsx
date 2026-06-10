@@ -343,8 +343,15 @@ function Calendar({ year, month, events, selectedDate, onSelectDate, onMonthChan
   for (let d = 1; d <= daysInMonth; d++) cells.push(d)
 
   return (
+    <div style={{ margin: isDesktop ? 0 : '16px', position: 'relative' }}>
+      {/* 테이프 장식 — 캘린더 테두리 바깥 래퍼에서 렌더링해서 테두리 위에 표시 */}
+      <div style={{
+        position: 'absolute', top: -7, left: '30%',
+        transform: 'rotate(-1.5deg)',
+        width: 52, height: 14, background: 'rgba(200,200,200,0.5)',
+        borderRadius: 2, border: '1px solid rgba(0,0,0,0.08)', zIndex: 10,
+      }} />
     <div style={{
-      margin: isDesktop ? 0 : '16px',
       background: C.white,
       border: `3px solid ${C.border}`,
       borderRadius: R.wobblyLg,
@@ -352,13 +359,6 @@ function Calendar({ year, month, events, selectedDate, onSelectDate, onMonthChan
       position: 'relative',
       overflow: 'hidden',
     }}>
-      {/* 테이프 장식 */}
-      <div style={{
-        position: 'absolute', top: -7, left: '30%',
-        transform: 'rotate(-1.5deg)',
-        width: 52, height: 14, background: 'rgba(200,200,200,0.5)',
-        borderRadius: 2, border: '1px solid rgba(0,0,0,0.08)', zIndex: 1,
-      }} />
 
       {/* 월 네비 + 토글 */}
       <div style={{
@@ -596,6 +596,7 @@ function Calendar({ year, month, events, selectedDate, onSelectDate, onMonthChan
           </div>
         )
       })()}
+    </div>
     </div>
   )
 }
