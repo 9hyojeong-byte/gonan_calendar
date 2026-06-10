@@ -243,6 +243,7 @@ function Header({ view, onBack, onAdd, isDesktop }) {
           fontSize: 18, fontWeight: 700,
           opacity: onBack ? 1 : 0, pointerEvents: onBack ? 'auto' : 'none',
           flexShrink: 0, transition: 'transform 0.1s',
+          position: 'relative', zIndex: 2,
         }} className={onBack ? 'btn-muted' : ''}>←</button>
         </div>
 
@@ -407,9 +408,9 @@ function Calendar({ year, month, events, selectedDate, onSelectDate, onMonthChan
           return (
             <div
               key={dateStr}
-              onClick={() => hasEvents && onSelectDate(dateStr)}
-              className={hasEvents ? 'day-cell-clickable' : ''}
-              style={{ height: isDesktop ? 70 : 62, position: 'relative', cursor: hasEvents ? 'pointer' : 'default' }}
+              onClick={() => onSelectDate(dateStr)}
+              className="day-cell-clickable"
+              style={{ height: isDesktop ? 70 : 62, position: 'relative', cursor: 'pointer' }}
             >
               <div style={{
                 position: 'absolute', top: 4, left: '50%', transform: 'translateX(-50%)',
@@ -462,7 +463,7 @@ function Calendar({ year, month, events, selectedDate, onSelectDate, onMonthChan
 }
 
 // ── 일정 목록 ────────────────────────────────────────────────
-function EventList({ date, events, onSelect }) {
+function EventList({ date, events, onSelect, onAdd }) {
   const filtered = events
     .filter(ev => eventCoversDate(ev, date))
     .sort((a, b) => a.startDate < b.startDate ? -1 : 1)
@@ -474,6 +475,11 @@ function EventList({ date, events, onSelect }) {
         {date ? '이 날엔 일정이 없어요!' : '날짜를 눌러보세요 👆'}
       </p>
       {!date && <p style={{ fontSize: 13, color: '#888' }}>+ 버튼으로 새 여행을 기록하세요</p>}
+      {date && onAdd && (
+        <button onClick={onAdd} className="btn-sketch-blue" style={{
+          marginTop: 16, padding: '10px 24px', fontSize: 14, fontWeight: 700,
+        }}>+ 일정 등록하기</button>
+      )}
     </div>
   )
 
@@ -496,6 +502,7 @@ function EventList({ date, events, onSelect }) {
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         {filtered.map((ev, i) => {
+
           const nights = dayDiff(ev.startDate, ev.endDate)
           const color = getEventColor(ev)
           const rot = i % 3 === 0 ? '-1deg' : i % 3 === 1 ? '0.5deg' : '-0.5deg'
@@ -558,6 +565,11 @@ function EventList({ date, events, onSelect }) {
           )
         })}
       </div>
+      {onAdd && (
+        <button onClick={onAdd} className="btn-sketch-blue" style={{
+          marginTop: 20, width: '100%', padding: '11px 0', fontSize: 14, fontWeight: 700,
+        }}>+ 일정 등록하기</button>
+      )}
     </div>
   )
 }
@@ -831,9 +843,17 @@ function inputCss(hasErr) {
 }
 
 // ── 등록/수정 폼 ──────────────────────────────────────────────
+function addOneDay(dateStr) {
+  const d = new Date(dateStr + 'T00:00:00')
+  d.setDate(d.getDate() + 1)
+  return toDateStr(d.getFullYear(), d.getMonth(), d.getDate())
+}
+
 function EventForm({ initialDate, editEvent, onSave, onCancel, submitting }) {
-  const [startDate, setStartDate] = useState(editEvent?.startDate || initialDate || todayStr())
-  const [endDate, setEndDate] = useState(editEvent?.endDate || initialDate || todayStr())
+  const defaultStart = editEvent?.startDate || initialDate || todayStr()
+  const defaultEnd   = editEvent?.endDate   || (initialDate ? addOneDay(initialDate) : todayStr())
+  const [startDate, setStartDate] = useState(defaultStart)
+  const [endDate, setEndDate] = useState(defaultEnd)
   const [leader, setLeader] = useState(editEvent?.leader || '')
   const [title, setTitle] = useState(editEvent?.title || '')
   const [content, setContent] = useState(editEvent?.content || '')
@@ -1032,6 +1052,7 @@ export default function App() {
   function handleSelectDate(date) { setSelectedDate(prev => prev === date ? null : date) }
   function handleSelectEvent(ev) { setSelectedEvent(ev); setView(VIEW.DETAIL) }
   function handleAddClick() { setEditingEvent(null); setView(VIEW.FORM) }
+  function handleAddFromDate() { setEditingEvent(null); setView(VIEW.FORM) }
 
   async function handleSaveEvent(ev) {
     setSubmitting(true)
@@ -1140,7 +1161,7 @@ export default function App() {
                   isDesktop={false}
                 />
                 <div style={{ marginTop: 8 }}>
-                  <EventList date={selectedDate} events={events} onSelect={handleSelectEvent} />
+                  <EventList date={selectedDate} events={events} onSelect={handleSelectEvent} onAdd={selectedDate ? handleAddFromDate : null} />
                 </div>
               </>
             )}
@@ -1175,7 +1196,7 @@ export default function App() {
                       })() : '📋 날짜를 클릭하세요'}
                     </h3>
                   </div>
-                  <EventList date={selectedDate} events={events} onSelect={handleSelectEvent} />
+                  <EventList date={selectedDate} events={events} onSelect={handleSelectEvent} onAdd={selectedDate ? handleAddFromDate : null} />
                 </div>
               </div>
             )}
