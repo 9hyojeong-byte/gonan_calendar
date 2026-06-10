@@ -413,7 +413,7 @@ function Calendar({ year, month, events, selectedDate, onSelectDate, onMonthChan
               key={dateStr}
               onClick={() => onSelectDate(dateStr)}
               className="day-cell-clickable"
-              style={{ height: isDesktop ? 76 : 68, position: 'relative', cursor: 'pointer' }}
+              style={{ height: isDesktop ? 88 : 80, position: 'relative', cursor: 'pointer' }}
             >
               <div style={{
                 position: 'absolute', top: 4, left: '50%', transform: 'translateX(-50%)',
@@ -437,7 +437,7 @@ function Calendar({ year, month, events, selectedDate, onSelectDate, onMonthChan
                 return (
                   <div key={ev.id} style={{
                     position: 'absolute',
-                    top: 34 + slotIdx * 11, height: 10,
+                    top: 32 + slotIdx * 16, height: 14,
                     left: isActualStart ? 3 : isRowStart ? 1 : 0,
                     right: isActualEnd ? 3 : isRowEnd ? 1 : 0,
                     background: getEventColor(ev),
@@ -455,7 +455,7 @@ function Calendar({ year, month, events, selectedDate, onSelectDate, onMonthChan
                   }}>
                     {isActualStart && (
                       <span style={{
-                        fontSize: 8, fontWeight: 700, color: '#fff',
+                        fontSize: 12, fontWeight: 700, color: '#fff',
                         whiteSpace: 'nowrap', overflow: 'hidden',
                         textOverflow: 'ellipsis', lineHeight: 1,
                         fontFamily: "'Noto Sans KR', sans-serif",
