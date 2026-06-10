@@ -538,7 +538,7 @@ function Calendar({ year, month, events, selectedDate, onSelectDate, onMonthChan
                       const eventsOnStartDate = startDateStr
                         ? slotted.filter(s => s.ev.startDate <= startDateStr && s.ev.endDate >= startDateStr).length
                         : 99
-                      const isSolo = isActualStart && eventsOnStartDate === 1
+                      const isSolo = isActualStart && eventsOnStartDate === 1 && showTitles
                       const thisBarH = isSolo ? barH * 2 : barH
 
                       return (
@@ -546,8 +546,8 @@ function Calendar({ year, month, events, selectedDate, onSelectDate, onMonthChan
                           position: 'absolute',
                           top: barTop + slot * barGap,
                           height: thisBarH,
-                          left:  `calc(${startCol / 7 * 100}% + ${isActualStart ? 3 : 0}px)`,
-                          width: `calc(${span / 7 * 100}% - ${(isActualStart ? 3 : 0) + (isActualEnd ? 3 : 0)}px)`,
+                          left:  `calc(${startCol / 7 * 100}% + ${isActualStart ? 4 : 2}px)`,
+                          width: `calc(${span / 7 * 100}% - ${(isActualStart ? 4 : 2) + (isActualEnd ? 4 : 2)}px)`,
                           background: getEventColor(ev),
                           borderRadius: [
                             isActualStart ? 4 : 0,
