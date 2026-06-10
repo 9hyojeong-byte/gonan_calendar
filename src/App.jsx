@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 
 // ── 디자인 토큰 ───────────────────────────────────────────────
 const C = {
@@ -110,7 +110,7 @@ function useIsDesktop() {
 }
 
 // ── GAS ───────────────────────────────────────────────────────
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbwHypzkPY72Z5N0Su9CuLIUUze6X0oVlVO4-DA-vfSLaM75D-hllhRc2vPfLUdxTgJVvw/exec'
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbyLrN1CAXR9NYHYHTqD4UrCduN53QYoqAl3dmYIWf88FqQACJtQYpgfDMRSOpNpri_-kQ/exec'
 
 function jsonpCall(params, timeoutMs = 15000) {
   return new Promise((resolve, reject) => {
@@ -178,13 +178,44 @@ function dayDiff(a, b) {
   return Math.round((new Date(b) - new Date(a)) / 86400000)
 }
 
+// URL을 감지해 링크로 변환
+function linkify(text) {
+  const urlRegex = /(https?:\/\/[^\s]+)/g
+  const parts = text.split(urlRegex)
+  return parts.map((part, i) =>
+    urlRegex.test(part)
+      ? <a key={i} href={part} target="_blank" rel="noopener noreferrer" style={{
+          color: '#2d5da1', fontWeight: 700,
+          textDecoration: 'underline',
+          wordBreak: 'break-all',
+        }}>{part}</a>
+      : part
+  )
+}
+
 const VIEW = { CALENDAR: 'calendar', DETAIL: 'detail', FORM: 'form' }
 const DAYS_KR = ['일', '월', '화', '수', '목', '금', '토']
 const MAX_SLOTS = 3
 
+const SHEET_URL = 'https://docs.google.com/spreadsheets/d/1I-j29J_sau7mJpjfmXrsyvtK2Xe-NqGByOyW3YNzpNI/edit?gid=2140106036#gid=2140106036'
+
 // ── 헤더 ─────────────────────────────────────────────────────
 function Header({ view, onBack, onAdd, isDesktop }) {
   const isCalendar = view === VIEW.CALENDAR
+  const tapCount = useRef(0)
+  const tapTimer = useRef(null)
+
+  function handleSecretTap() {
+    tapCount.current += 1
+    clearTimeout(tapTimer.current)
+    if (tapCount.current >= 10) {
+      tapCount.current = 0
+      window.open(SHEET_URL, '_blank', 'noopener,noreferrer')
+      return
+    }
+    tapTimer.current = setTimeout(() => { tapCount.current = 0 }, 2000)
+  }
+
   return (
     <div style={{
       background: C.white,
@@ -196,7 +227,12 @@ function Header({ view, onBack, onAdd, isDesktop }) {
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         maxWidth: isDesktop ? 1200 : '100%', margin: '0 auto',
       }}>
-        {/* 뒤로가기 */}
+        {/* 뒤로가기 + 히든 탭 영역 */}
+        <div style={{ position: 'relative', flexShrink: 0 }}>
+          <div onClick={handleSecretTap} style={{
+            position: 'absolute', top: -10, left: -10,
+            width: 48, height: 48, zIndex: 1,
+          }} />
         <button onClick={onBack} style={{
           width: 38, height: 38,
           borderRadius: R.wobblyMd,
@@ -208,6 +244,7 @@ function Header({ view, onBack, onAdd, isDesktop }) {
           opacity: onBack ? 1 : 0, pointerEvents: onBack ? 'auto' : 'none',
           flexShrink: 0, transition: 'transform 0.1s',
         }} className={onBack ? 'btn-muted' : ''}>←</button>
+        </div>
 
         {/* 타이틀 */}
         <div style={{ textAlign: 'center' }}>
@@ -241,17 +278,27 @@ function Header({ view, onBack, onAdd, isDesktop }) {
 }
 
 // ── 로딩 ─────────────────────────────────────────────────────
+const TRAVEL_EMOJIS = ['✈️', '🏖️', '🗺️', '🧳', '🌏', '🏕️', '📸']
+
 function Spinner({ fullPage }) {
+  const emoji = TRAVEL_EMOJIS[Math.floor(Math.random() * TRAVEL_EMOJIS.length)]
   const inner = (
     <div style={{ textAlign: 'center', padding: 40 }}>
       <div style={{
-        width: 40, height: 40, borderRadius: '50%',
-        border: `4px solid ${C.muted}`,
-        borderTopColor: C.accent,
-        animation: 'spin 0.8s linear infinite',
-        margin: '0 auto 14px',
-      }} />
-      <p style={{ fontSize: 15, color: '#888', fontStyle: 'italic' }}>불러오는 중... ✏️</p>
+        width: 80, height: 80, borderRadius: '50%',
+        border: '3px solid #2d2d2d',
+        boxShadow: '4px 4px 0px 0px #2d2d2d',
+        background: '#fff',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        margin: '0 auto 20px',
+      }}>
+        <span style={{ fontSize: 36, display: 'inline-block', animation: 'bounce-gentle 0.8s ease-in-out infinite' }}>
+          {emoji}
+        </span>
+      </div>
+      <p style={{ fontSize: 15, color: '#888', fontFamily: "'Noto Sans KR', sans-serif", margin: 0 }}>
+        불러오는 중... ✏️
+      </p>
     </div>
   )
   if (!fullPage) return inner
@@ -466,6 +513,11 @@ function EventList({ date, events, onSelect }) {
 
               <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginTop: 2 }}>
                 <div style={{ flex: 1 }}>
+                  {ev.leader && (
+                    <div style={{ fontSize: 11, color: C.accentBlue, fontWeight: 700, marginBottom: 3 }}>
+                      👤 {ev.leader}
+                    </div>
+                  )}
                   <div style={{
                     fontFamily: "'Noto Sans KR', 'Kalam', cursive", fontWeight: 700,
                     fontSize: 15, color: C.text, marginBottom: 4,
@@ -499,9 +551,17 @@ function EventList({ date, events, onSelect }) {
 }
 
 // ── 일정 상세 ────────────────────────────────────────────────
-function EventDetail({ event, onEdit, onDelete }) {
+function EventDetail({ event, onEdit, onDelete, onUpdateParticipants, updatingParticipants }) {
   const nights = dayDiff(event.startDate, event.endDate)
   const color = getEventColor(event)
+  const [editingParticipants, setEditingParticipants] = useState(false)
+  const [participantsVal, setParticipantsVal] = useState(event.participants || '')
+
+  function handleSaveParticipants() {
+    onUpdateParticipants(participantsVal.trim())
+    setEditingParticipants(false)
+  }
+
   return (
     <div style={{ flex: 1, padding: '20px 16px 100px' }}>
       {/* 타이틀 카드 */}
@@ -519,11 +579,24 @@ function EventDetail({ event, onEdit, onDelete }) {
           boxShadow: '2px 2px 0px #2d2d2d',
         }} />
 
+        {event.leader && (
+          <div style={{
+            display: 'inline-flex', alignItems: 'center', gap: 5,
+            background: color, color: '#fff',
+            border: `2px solid ${C.border}`, borderRadius: R.tag,
+            boxShadow: S.small, padding: '3px 10px',
+            fontSize: 12, fontWeight: 700, marginBottom: 8,
+          }}>
+            👤 {event.leader}
+          </div>
+        )}
+
         <div style={{
           display: 'inline-flex', alignItems: 'center', gap: 6,
           background: C.white, border: `2px solid ${C.border}`,
           borderRadius: R.tag, boxShadow: S.small,
           padding: '3px 10px', marginBottom: 10, fontSize: 12,
+          marginLeft: event.leader ? 6 : 0,
           fontFamily: "'Noto Sans KR', 'Patrick Hand', cursive",
         }}>
           📅 {fmtRange(event)}
@@ -542,7 +615,7 @@ function EventDetail({ event, onEdit, onDelete }) {
       <div style={{
         background: C.white, border: `3px solid ${C.border}`,
         borderRadius: R.wobblyMd, boxShadow: S.base,
-        padding: '18px 18px', marginBottom: 20,
+        padding: '18px 18px', marginBottom: 16,
         transform: 'rotate(0.5deg)',
       }}>
         <div style={{
@@ -554,19 +627,105 @@ function EventDetail({ event, onEdit, onDelete }) {
         <p style={{
           fontSize: 15, color: event.content ? C.text : '#aaa',
           lineHeight: 1.8, whiteSpace: 'pre-wrap', wordBreak: 'break-word',
-          minHeight: 80, margin: 0, fontStyle: event.content ? 'normal' : 'italic',
+          minHeight: 80, margin: '0 0 16px', fontStyle: event.content ? 'normal' : 'italic',
         }}>
-          {event.content || '내용이 없어요. 메모를 남겨보세요 :)'}
+          {event.content ? linkify(event.content) : '내용이 없어요. 메모를 남겨보세요 :)'}
         </p>
+        <a
+          href="https://www.somoim.co.kr/ee346172-8bf3-11ec-88c3-0ada976e8c451"
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+            background: C.accentBlue, color: '#fff',
+            border: `3px solid ${C.border}`, borderRadius: R.wobblyMd,
+            boxShadow: S.base,
+            padding: '12px 0', width: '100%',
+            fontSize: 14, fontWeight: 700, textDecoration: 'none',
+            transition: 'transform 0.1s, box-shadow 0.1s',
+          }}
+          onMouseEnter={e => { e.currentTarget.style.transform = 'translate(2px,2px)'; e.currentTarget.style.boxShadow = S.small }}
+          onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = S.base }}
+        >
+          🔗 소모임 바로가기
+        </a>
       </div>
 
-      <div style={{ display: 'flex', gap: 12 }}>
+      {/* 수정/삭제 버튼 */}
+      <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
         <button onClick={onEdit} className="btn-sketch-blue" style={{
           flex: 1, padding: '13px', fontSize: 14, fontWeight: 700,
         }}>✏️ 수정</button>
         <button onClick={onDelete} className="btn-danger-sketch" style={{
           flex: 1, padding: '13px', fontSize: 14, fontWeight: 700,
         }}>🗑️ 삭제</button>
+      </div>
+
+      {/* 참석자 카드 — 비밀번호 없이 누구나 수정 */}
+      <div style={{
+        background: C.white, border: `3px solid ${C.border}`,
+        borderRadius: R.wobblyMd, boxShadow: S.base,
+        padding: '16px 18px',
+        transform: 'rotate(-0.3deg)',
+      }}>
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          borderBottom: `2px dashed ${C.muted}`, paddingBottom: 8, marginBottom: 12,
+        }}>
+          <div style={{
+            fontSize: 11, fontWeight: 700, color: C.accentBlue,
+            textTransform: 'uppercase', letterSpacing: '0.1em',
+            fontFamily: "'Noto Sans KR', 'Kalam', cursive",
+          }}>🧑‍🤝‍🧑 참석자</div>
+          {!editingParticipants && (
+            <button
+              onClick={() => { setParticipantsVal(event.participants || ''); setEditingParticipants(true) }}
+              style={{
+                fontSize: 11, color: C.accentBlue, fontWeight: 700,
+                border: `2px solid ${C.accentBlue}`, borderRadius: R.tag,
+                padding: '2px 8px', background: 'transparent',
+                transition: 'background 0.1s, color 0.1s',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.background = C.accentBlue; e.currentTarget.style.color = '#fff' }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = C.accentBlue }}
+            >✏️ 수정</button>
+          )}
+        </div>
+
+        {editingParticipants ? (
+          <div>
+            <textarea
+              autoFocus
+              value={participantsVal}
+              onChange={e => setParticipantsVal(e.target.value)}
+              placeholder="참석자 이름을 자유롭게 적어주세요 (예: 최술사, 이고고, 박여행)"
+              rows={3}
+              style={{ ...inputCss(false), resize: 'vertical', lineHeight: 1.6, fontSize: 14 }}
+            />
+            <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+              <button
+                onClick={() => setEditingParticipants(false)}
+                className="btn-muted"
+                style={{ flex: 1, padding: '10px', fontSize: 13, fontWeight: 700 }}
+              >취소</button>
+              <button
+                onClick={handleSaveParticipants}
+                disabled={updatingParticipants}
+                className="btn-sketch"
+                style={{ flex: 2, padding: '10px', fontSize: 13, fontWeight: 700, opacity: updatingParticipants ? 0.7 : 1 }}
+              >{updatingParticipants ? '저장 중...' : '✅ 저장'}</button>
+            </div>
+          </div>
+        ) : (
+          <p style={{
+            fontSize: 14, color: event.participants ? C.text : '#aaa',
+            lineHeight: 1.8, margin: 0,
+            fontStyle: event.participants ? 'normal' : 'italic',
+            whiteSpace: 'pre-wrap',
+          }}>
+            {event.participants || '아직 참석자가 없어요. 수정 버튼으로 추가해보세요!'}
+          </p>
+        )}
       </div>
     </div>
   )
@@ -663,8 +822,10 @@ function inputCss(hasErr) {
 function EventForm({ initialDate, editEvent, onSave, onCancel, submitting }) {
   const [startDate, setStartDate] = useState(editEvent?.startDate || initialDate || todayStr())
   const [endDate, setEndDate] = useState(editEvent?.endDate || initialDate || todayStr())
+  const [leader, setLeader] = useState(editEvent?.leader || '')
   const [title, setTitle] = useState(editEvent?.title || '')
   const [content, setContent] = useState(editEvent?.content || '')
+  const [participants, setParticipants] = useState(editEvent?.participants || '')
   const [pw, setPw] = useState('')
   const [errors, setErrors] = useState({})
 
@@ -676,6 +837,7 @@ function EventForm({ initialDate, editEvent, onSave, onCancel, submitting }) {
 
   function validate() {
     const e = {}
+    if (!leader.trim()) e.leader = '리딩(주최자)을 입력해주세요!'
     if (!title.trim()) e.title = '여행 제목을 써주세요!'
     if (!startDate) e.startDate = '시작 날짜를 골라주세요.'
     if (!endDate) e.endDate = '종료 날짜를 골라주세요.'
@@ -689,11 +851,12 @@ function EventForm({ initialDate, editEvent, onSave, onCancel, submitting }) {
     const errs = validate()
     if (Object.keys(errs).length > 0) { setErrors(errs); return }
     if (editEvent) {
-      onSave({ ...editEvent, startDate, endDate, title: title.trim(), content: content.trim() })
+      onSave({ ...editEvent, startDate, endDate, leader: leader.trim(), title: title.trim(), content: content.trim(), participants: participants.trim() })
     } else {
       onSave({
         id: Date.now().toString(), startDate, endDate,
-        title: title.trim(), content: content.trim(),
+        leader: leader.trim(), title: title.trim(), content: content.trim(),
+        participants: participants.trim(),
         pwHash: simpleHash(pw.trim()),
         createdAt: new Date().toISOString(),
       })
@@ -759,6 +922,12 @@ function EventForm({ initialDate, editEvent, onSave, onCancel, submitting }) {
           )}
         </div>
 
+        <FormField label="👤 리딩 (주최자)" error={errors.leader}>
+          <input type="text" value={leader}
+            onChange={e => { setLeader(e.target.value); setErrors(v => ({ ...v, leader: null })) }}
+            placeholder="예) 최술사" style={inputCss(errors.leader)} />
+        </FormField>
+
         <FormField label="🗺️ 여행 제목" error={errors.title}>
           <input type="text" value={title}
             onChange={e => { setTitle(e.target.value); setErrors(v => ({ ...v, title: null })) }}
@@ -769,6 +938,12 @@ function EventForm({ initialDate, editEvent, onSave, onCancel, submitting }) {
           <textarea value={content} onChange={e => setContent(e.target.value)}
             placeholder={"장소, 숙소, 준비물 등\n자유롭게 적어주세요 🏖️"}
             rows={5} style={{ ...inputCss(false), resize: 'vertical', lineHeight: 1.7 }} />
+        </FormField>
+
+        <FormField label="🧑‍🤝‍🧑 참석자" hint="나중에 누구든 자유롭게 수정할 수 있어요.">
+          <textarea value={participants} onChange={e => setParticipants(e.target.value)}
+            placeholder={"참석자 이름을 적어주세요\n예) 최술사, 이고고, 박여행"}
+            rows={3} style={{ ...inputCss(false), resize: 'vertical', lineHeight: 1.7 }} />
         </FormField>
 
         {!editEvent && (
@@ -896,6 +1071,25 @@ export default function App() {
     }
   }
 
+  async function handleUpdateParticipants(participants) {
+    setSubmitting(true)
+    console.log('[updateParticipants] 시작, id:', selectedEvent.id, 'participants:', participants)
+    try {
+      const res = await gasPost({ action: 'updateParticipants', id: selectedEvent.id, participants })
+      console.log('[updateParticipants] res:', JSON.stringify(res))
+      if (res.status !== 'updated') { showToast('❌ 참석자 저장 실패'); return }
+      const updated = { ...selectedEvent, participants }
+      setEvents(prev => prev.map(e => e.id === selectedEvent.id ? updated : e))
+      setSelectedEvent(updated)
+      showToast('✅ 참석자가 저장됐어요!')
+    } catch(err) {
+      console.log('[updateParticipants] catch error:', err?.message)
+      showToast('❌ 오류가 발생했어요')
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
   const isDesktop = useIsDesktop()
   const { show: showInstall, isIOS, install, dismiss: dismissInstall } = useInstallPrompt()
 
@@ -982,6 +1176,8 @@ export default function App() {
                       event={selectedEvent}
                       onEdit={() => setPwModal({ action: 'edit' })}
                       onDelete={() => setPwModal({ action: 'delete' })}
+                      onUpdateParticipants={handleUpdateParticipants}
+                      updatingParticipants={submitting}
                     />
                   </div>
                 </div>
