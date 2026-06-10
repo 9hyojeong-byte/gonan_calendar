@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Kalam:wght@400;700&family=Patrick+Hand&family=Noto+Sans+KR:wght@400;500;700;800&display=swap');
+
 * {
   box-sizing: border-box;
   -webkit-tap-highlight-color: transparent;
@@ -5,10 +7,17 @@
 
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans KR', sans-serif;
-  background: #f0faf3;
-  color: #222;
+  font-family: 'Noto Sans KR', 'Patrick Hand', cursive;
+  background-color: #fdfbf7;
+  background-image: radial-gradient(#e5e0d8 1px, transparent 1px);
+  background-size: 24px 24px;
+  color: #2d2d2d;
   -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4 {
+  font-family: 'Noto Sans KR', 'Kalam', cursive;
+  margin: 0;
 }
 
 #root {
@@ -17,12 +26,13 @@ body {
   flex-direction: column;
 }
 
-/* 모바일: 중앙 카드 */
 @media (max-width: 767px) {
   #root {
     max-width: 480px;
     margin: 0 auto;
-    background: #fff;
+    background-color: #fdfbf7;
+    background-image: radial-gradient(#e5e0d8 1px, transparent 1px);
+    background-size: 24px 24px;
   }
 }
 
@@ -30,9 +40,122 @@ button {
   cursor: pointer;
   border: none;
   background: none;
-  font-family: inherit;
+  font-family: 'Noto Sans KR', 'Patrick Hand', cursive;
 }
 
 input, textarea {
-  font-family: inherit;
+  font-family: 'Noto Sans KR', 'Patrick Hand', cursive;
+}
+
+/* ── 스케치 버튼 ── */
+.btn-sketch {
+  background: #fff;
+  border: 3px solid #2d2d2d;
+  box-shadow: 4px 4px 0px 0px #2d2d2d;
+  color: #2d2d2d;
+  transition: transform 0.1s, box-shadow 0.1s, background 0.1s, color 0.1s;
+  border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
+}
+.btn-sketch:hover {
+  background: #ff4d4d;
+  color: #fff;
+  box-shadow: 2px 2px 0px 0px #2d2d2d;
+  transform: translate(2px, 2px);
+}
+.btn-sketch:active {
+  box-shadow: none;
+  transform: translate(4px, 4px);
+}
+
+.btn-sketch-blue {
+  background: #fff;
+  border: 3px solid #2d2d2d;
+  box-shadow: 4px 4px 0px 0px #2d2d2d;
+  color: #2d2d2d;
+  transition: transform 0.1s, box-shadow 0.1s, background 0.1s, color 0.1s;
+  border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
+}
+.btn-sketch-blue:hover {
+  background: #2d5da1;
+  color: #fff;
+  box-shadow: 2px 2px 0px 0px #2d2d2d;
+  transform: translate(2px, 2px);
+}
+.btn-sketch-blue:active {
+  box-shadow: none;
+  transform: translate(4px, 4px);
+}
+
+.btn-muted {
+  background: #e5e0d8;
+  border: 3px solid #2d2d2d;
+  box-shadow: 4px 4px 0px 0px #2d2d2d;
+  color: #2d2d2d;
+  transition: transform 0.1s, box-shadow 0.1s, background 0.1s, color 0.1s;
+  border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
+}
+.btn-muted:hover {
+  background: #2d5da1;
+  color: #fff;
+  box-shadow: 2px 2px 0px 0px #2d2d2d;
+  transform: translate(2px, 2px);
+}
+.btn-muted:active {
+  box-shadow: none;
+  transform: translate(4px, 4px);
+}
+
+.btn-danger-sketch {
+  background: #fff;
+  border: 3px solid #2d2d2d;
+  box-shadow: 4px 4px 0px 0px #2d2d2d;
+  color: #ff4d4d;
+  transition: transform 0.1s, box-shadow 0.1s, background 0.1s, color 0.1s;
+  border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
+}
+.btn-danger-sketch:hover {
+  background: #ff4d4d;
+  color: #fff;
+  box-shadow: 2px 2px 0px 0px #2d2d2d;
+  transform: translate(2px, 2px);
+}
+.btn-danger-sketch:active {
+  box-shadow: none;
+  transform: translate(4px, 4px);
+}
+
+/* ── 이벤트 카드 호버 ── */
+.event-card-sketch {
+  transition: transform 0.1s, box-shadow 0.1s;
+  cursor: pointer;
+}
+.event-card-sketch:hover {
+  box-shadow: 6px 6px 0px 0px #2d2d2d !important;
+  transform: rotate(1deg) translateY(-2px);
+}
+
+/* ── 날짜 셀 호버 ── */
+.day-cell-clickable:hover {
+  transform: scale(1.05);
+  transition: transform 0.1s;
+}
+
+/* ── 월 이동 버튼 ── */
+.month-nav-btn {
+  transition: transform 0.1s, box-shadow 0.1s, background 0.1s;
+}
+.month-nav-btn:hover {
+  background: #2d2d2d !important;
+  color: #fff !important;
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0px 0px #2d2d2d !important;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg) }
+}
+
+@keyframes bounce-gentle {
+  0%, 100% { transform: translateY(0) }
+  50% { transform: translateY(-6px) }
 }

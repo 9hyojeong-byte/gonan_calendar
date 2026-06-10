@@ -1,6 +1,35 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 
-// ── PWA 설치 유도 배너 ────────────────────────────────────────
+// ── 디자인 토큰 ───────────────────────────────────────────────
+const C = {
+  bg:          '#fdfbf7',
+  text:        '#2d2d2d',
+  muted:       '#e5e0d8',
+  accent:      '#ff4d4d',
+  accentBlue:  '#2d5da1',
+  border:      '#2d2d2d',
+  white:       '#ffffff',
+  yellow:      '#fff9c4',
+  danger:      '#ff4d4d',
+}
+
+// 울퉁불퉁한 border-radius 모음
+const R = {
+  wobbly:   '255px 15px 225px 15px / 15px 225px 15px 255px',
+  wobblyMd: '30px 8px 28px 6px / 6px 28px 8px 30px',
+  wobblyLg: '40px 10px 36px 10px / 10px 36px 10px 40px',
+  tag:      '8px 2px 8px 2px / 2px 8px 2px 8px',
+}
+
+// 하드 오프셋 그림자
+const S = {
+  base:  '4px 4px 0px 0px #2d2d2d',
+  large: '6px 6px 0px 0px #2d2d2d',
+  small: '3px 3px 0px 0px #2d2d2d',
+  soft:  '3px 3px 0px 0px rgba(45,45,45,0.15)',
+}
+
+// ── PWA ──────────────────────────────────────────────────────
 function useInstallPrompt() {
   const [prompt, setPrompt] = useState(null)
   const [isIOS, setIsIOS] = useState(false)
@@ -26,63 +55,45 @@ function useInstallPrompt() {
     if (outcome === 'accepted') dismiss()
     else setPrompt(null)
   }
-
   const dismiss = () => {
     localStorage.setItem('pwa_install_dismissed', '1')
-    setDismissed(true)
-    setPrompt(null)
+    setDismissed(true); setPrompt(null)
   }
-
-  const show = !isInstalled && !dismissed && (prompt || isIOS)
-  return { show, isIOS, install, dismiss }
+  return { show: !isInstalled && !dismissed && (prompt || isIOS), isIOS, install, dismiss }
 }
 
 function InstallBanner({ isIOS, onInstall, onDismiss }) {
   return (
     <div style={{
-      position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 9999,
-      background: '#fff',
-      borderTop: '1px solid #d8f3dc',
-      boxShadow: '0 -4px 24px rgba(45,106,79,0.15)',
-      padding: '16px 20px 20px',
-      display: 'flex', flexDirection: 'column', gap: 12,
-      maxWidth: 480, margin: '0 auto',
+      position: 'fixed', bottom: 12, left: 12, right: 12, zIndex: 9999,
+      background: C.yellow, border: `3px solid ${C.border}`,
+      borderRadius: R.wobblyMd, boxShadow: S.large,
+      padding: '14px 16px', maxWidth: 456, margin: '0 auto',
+      transform: 'rotate(-0.5deg)',
     }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-        <div style={{
-          width: 48, height: 48, borderRadius: 12, overflow: 'hidden', flexShrink: 0,
-          background: 'linear-gradient(135deg,#2d6a4f,#52b788)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 26,
-        }}>✈️</div>
-        <div>
-          <div style={{ fontWeight: 700, fontSize: 15, color: '#1b4332' }}>고난크루 앱 설치</div>
-          <div style={{ fontSize: 13, color: '#555', marginTop: 2 }}>홈 화면에 추가하면 더 편리해요</div>
+      {/* 테이프 장식 */}
+      <div style={{
+        position: 'absolute', top: -8, left: '50%', transform: 'translateX(-50%) rotate(-2deg)',
+        width: 56, height: 14, background: 'rgba(200,200,200,0.55)',
+        borderRadius: 2, border: '1px solid rgba(0,0,0,0.1)',
+      }} />
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <span style={{ fontSize: 28 }}>✈️</span>
+        <div style={{ flex: 1 }}>
+          <h4 style={{ fontSize: 16, fontWeight: 700, marginBottom: 2 }}>고난크루 앱 설치하기!</h4>
+          <p style={{ fontSize: 13, color: '#555', margin: 0 }}>홈 화면에 추가하면 더 편리해요</p>
         </div>
-        <button onClick={onDismiss} style={{
-          marginLeft: 'auto', fontSize: 20, color: '#aaa', padding: 4,
-        }}>✕</button>
+        <button onClick={onDismiss} style={{ fontSize: 18, color: '#888', padding: 4 }}>✕</button>
       </div>
-
       {isIOS ? (
-        <div style={{
-          background: '#f0faf3', borderRadius: 12, padding: '12px 14px',
-          fontSize: 13, color: '#2d6a4f', lineHeight: 1.6,
-        }}>
-          Safari 하단의 <strong>공유 버튼(</strong>
-          <span style={{ fontSize: 15 }}>⬆️</span>
-          <strong>)</strong>을 누른 후<br />
-          <strong>"홈 화면에 추가"</strong>를 선택하세요
+        <div style={{ marginTop: 10, fontSize: 13, color: C.text, lineHeight: 1.6 }}>
+          Safari 하단 <strong>공유(⬆️)</strong> → <strong>"홈 화면에 추가"</strong>
         </div>
       ) : (
-        <button onClick={onInstall} style={{
-          background: 'linear-gradient(135deg,#2d6a4f,#52b788)',
-          color: '#fff', fontWeight: 700, fontSize: 15,
-          borderRadius: 12, padding: '13px 0',
-          width: '100%',
-        }}>
-          홈 화면에 추가하기
-        </button>
+        <button onClick={onInstall} className="btn-sketch" style={{
+          marginTop: 12, width: '100%', padding: '11px 0',
+          fontSize: 15, fontWeight: 700,
+        }}>홈 화면에 추가하기 ✏️</button>
       )}
     </div>
   )
@@ -98,35 +109,25 @@ function useIsDesktop() {
   return is
 }
 
-// ── GAS 엔드포인트 ────────────────────────────────────────────
+// ── GAS ───────────────────────────────────────────────────────
 const GAS_URL = 'https://script.google.com/macros/s/AKfycbwHypzkPY72Z5N0Su9CuLIUUze6X0oVlVO4-DA-vfSLaM75D-hllhRc2vPfLUdxTgJVvw/exec'
 
-// JSONP 호출 — fetch/CORS 문제를 원천 차단, 모바일 PWA에서도 100% 동작
 function jsonpCall(params, timeoutMs = 15000) {
   return new Promise((resolve, reject) => {
     const cb = '_gc' + Date.now()
     const url = new URL(GAS_URL)
     url.searchParams.set('callback', cb)
-    url.searchParams.set('_t', Date.now()) // 캐시 우회
+    url.searchParams.set('_t', Date.now())
     Object.entries(params).forEach(([k, v]) => {
       if (v !== undefined && v !== null) url.searchParams.set(k, String(v))
     })
-
     const script = document.createElement('script')
     script.src = url.toString()
-
-    const timer = setTimeout(() => {
-      cleanup(); reject(new Error('요청 시간 초과'))
-    }, timeoutMs)
-
+    const timer = setTimeout(() => { cleanup(); reject(new Error('시간 초과')) }, timeoutMs)
     window[cb] = (data) => { cleanup(); resolve(data) }
-
     function cleanup() {
-      clearTimeout(timer)
-      delete window[cb]
-      script.parentNode?.removeChild(script)
+      clearTimeout(timer); delete window[cb]; script.parentNode?.removeChild(script)
     }
-
     script.onerror = () => { cleanup(); reject(new Error('네트워크 오류')) }
     document.head.appendChild(script)
   })
@@ -135,26 +136,10 @@ function jsonpCall(params, timeoutMs = 15000) {
 const gasGet  = ()     => jsonpCall({ action: 'list' })
 const gasPost = (body) => jsonpCall(body)
 
-// ── 디자인 토큰 ───────────────────────────────────────────────
-const C = {
-  grad: 'linear-gradient(135deg, #2d6a4f 0%, #52b788 100%)',
-  primary: '#2d6a4f',
-  primaryDark: '#1b4332',
-  primaryLight: '#d8f3dc',
-  accent: '#52b788',
-  text: '#1b2e23',
-  textSub: '#4a6741',
-  textMuted: '#7a9e7e',
-  border: '#d8f3dc',
-  bg: '#f0faf3',
-  white: '#ffffff',
-  danger: '#ef4444',
-  dangerLight: '#fef2f2',
-}
-
+// ── 유틸 ─────────────────────────────────────────────────────
 const PALETTE = [
-  '#40916c', '#52b788', '#1a759f', '#e76f51',
-  '#9b5de5', '#f4a261', '#2196f3', '#e91e63',
+  '#ff4d4d', '#2d5da1', '#e67e22', '#27ae60',
+  '#8e44ad', '#e91e8c', '#16a085', '#d35400',
 ]
 
 function getEventColor(ev) {
@@ -163,7 +148,6 @@ function getEventColor(ev) {
   return PALETTE[Math.abs(h) % PALETTE.length]
 }
 
-// ── 유틸 ─────────────────────────────────────────────────────
 function simpleHash(str) {
   let h = 0
   for (let i = 0; i < str.length; i++) h = (Math.imul(31, h) + str.charCodeAt(i)) | 0
@@ -203,81 +187,75 @@ function Header({ view, onBack, onAdd, isDesktop }) {
   const isCalendar = view === VIEW.CALENDAR
   return (
     <div style={{
-      background: C.grad, padding: isDesktop ? '16px 40px' : '14px 20px',
-      position: 'sticky', top: 0, zIndex: 10,
+      background: C.white,
+      borderBottom: `3px dashed ${C.border}`,
+      padding: isDesktop ? '12px 40px' : '10px 16px',
+      position: 'fixed', top: 0, left: 0, right: 0, zIndex: 10,
     }}>
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         maxWidth: isDesktop ? 1200 : '100%', margin: '0 auto',
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <button onClick={onBack} style={{
-            width: 38, height: 38, borderRadius: '50%',
-            background: onBack ? 'rgba(255,255,255,0.2)' : 'transparent',
-            color: C.white, fontSize: 18,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            opacity: onBack ? 1 : 0, pointerEvents: onBack ? 'auto' : 'none',
-          }}>←</button>
-          {isCalendar && isDesktop && (
-            <div>
-              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.65)', letterSpacing: 2 }}>✈️ GONAN CREW</div>
-              <div style={{ fontSize: 22, fontWeight: 800, color: C.white, letterSpacing: '-0.5px', marginTop: 1 }}>여행 캘린더</div>
-            </div>
+        {/* 뒤로가기 */}
+        <button onClick={onBack} style={{
+          width: 38, height: 38,
+          borderRadius: R.wobblyMd,
+          border: onBack ? `3px solid ${C.border}` : 'none',
+          background: onBack ? C.muted : 'transparent',
+          boxShadow: onBack ? S.small : 'none',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: 18, fontWeight: 700,
+          opacity: onBack ? 1 : 0, pointerEvents: onBack ? 'auto' : 'none',
+          flexShrink: 0, transition: 'transform 0.1s',
+        }} className={onBack ? 'btn-muted' : ''}>←</button>
+
+        {/* 타이틀 */}
+        <div style={{ textAlign: 'center' }}>
+          {isCalendar ? (
+            <>
+              <h1 style={{
+                fontSize: isDesktop ? 24 : 20, fontWeight: 700,
+                color: C.text, lineHeight: 1,
+                transform: 'rotate(-1deg)', display: 'inline-block',
+              }}>📆고난 캘린더🌄</h1>
+            </>
+          ) : (
+            <h2 style={{ fontSize: isDesktop ? 20 : 17, fontWeight: 700, color: C.text }}>
+              {view === VIEW.DETAIL ? '여행 상세 📋' : '일정 등록 ✍️'}
+            </h2>
           )}
         </div>
 
-        {isCalendar && !isDesktop && (
-          <div style={{ textAlign: 'center' }}>
-            <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)', letterSpacing: 2, marginBottom: 2 }}>✈️ GONAN CREW</div>
-            <div style={{ fontSize: 20, fontWeight: 800, color: C.white, letterSpacing: '-0.5px' }}>여행 캘린더</div>
-          </div>
-        )}
-        {!isCalendar && (
-          <span style={{ fontWeight: 700, fontSize: isDesktop ? 20 : 17, color: C.white }}>
-            {view === VIEW.DETAIL ? '여행 상세' : '일정 등록'}
-          </span>
-        )}
-
-        <button onClick={onAdd} style={{
-          width: isDesktop ? 'auto' : 38, height: isDesktop ? 44 : 38,
-          padding: isDesktop ? '0 20px' : 0,
-          borderRadius: isDesktop ? 14 : '50%',
-          background: onAdd ? 'rgba(255,255,255,0.25)' : 'transparent',
-          color: C.white, fontSize: isDesktop ? 15 : 22,
-          fontWeight: isDesktop ? 700 : 300,
-          whiteSpace: 'nowrap',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          gap: 4,
+        {/* 등록 버튼 */}
+        <button onClick={onAdd} className="btn-sketch" style={{
+          padding: isDesktop ? '8px 16px' : '7px 12px',
+          fontSize: isDesktop ? 14 : 13, fontWeight: 700,
           opacity: onAdd ? 1 : 0, pointerEvents: onAdd ? 'auto' : 'none',
+          flexShrink: 0,
         }}>
-          {isDesktop ? <>＋ 일정 등록</> : '+'}
+          {isDesktop ? '+ 새 여행' : '+'}
         </button>
       </div>
     </div>
   )
 }
 
-// ── 로딩 스피너 ───────────────────────────────────────────────
+// ── 로딩 ─────────────────────────────────────────────────────
 function Spinner({ fullPage }) {
   const inner = (
-    <div style={{ textAlign: 'center', color: C.textMuted, padding: 40 }}>
+    <div style={{ textAlign: 'center', padding: 40 }}>
       <div style={{
-        width: 36, height: 36, borderRadius: '50%',
-        border: `3px solid ${C.primaryLight}`,
-        borderTopColor: C.primary,
+        width: 40, height: 40, borderRadius: '50%',
+        border: `4px solid ${C.muted}`,
+        borderTopColor: C.accent,
         animation: 'spin 0.8s linear infinite',
-        margin: '0 auto 12px',
+        margin: '0 auto 14px',
       }} />
-      <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
-      <div style={{ fontSize: 13 }}>불러오는 중...</div>
+      <p style={{ fontSize: 15, color: '#888', fontStyle: 'italic' }}>불러오는 중... ✏️</p>
     </div>
   )
   if (!fullPage) return inner
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 1 }}>
-      {inner}
-    </div>
-  )
+  return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 1 }}>{inner}</div>
 }
 
 // ── 캘린더 ───────────────────────────────────────────────────
@@ -292,52 +270,75 @@ function Calendar({ year, month, events, selectedDate, onSelectDate, onMonthChan
     .filter(ev => ev.startDate <= monthEnd && ev.endDate >= monthStart)
     .sort((a, b) => a.startDate < b.startDate ? -1 : a.startDate > b.startDate ? 1 : a.id.localeCompare(b.id))
 
-  function getSlottedEvents(dateStr) {
-    return visibleEvents.filter(ev => eventCoversDate(ev, dateStr))
-  }
-
   const cells = []
   for (let i = 0; i < firstDay; i++) cells.push(null)
   for (let d = 1; d <= daysInMonth; d++) cells.push(d)
 
   return (
     <div style={{
-      margin: isDesktop ? '0' : '12px 16px 0',
-      borderRadius: isDesktop ? 20 : 20,
-      background: C.white, boxShadow: '0 4px 20px rgba(45,106,79,0.12)',
+      margin: isDesktop ? 0 : '16px',
+      background: C.white,
+      border: `3px solid ${C.border}`,
+      borderRadius: R.wobblyLg,
+      boxShadow: S.large,
+      position: 'relative',
     }}>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 8px 10px' }}>
-        <button onClick={() => onMonthChange(-1)} style={{
-          width: 36, height: 36, borderRadius: '50%', background: C.bg,
-          color: C.textSub, fontSize: 18,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
+      {/* 테이프 장식 */}
+      <div style={{
+        position: 'absolute', top: -7, left: '30%',
+        transform: 'rotate(-1.5deg)',
+        width: 52, height: 14, background: 'rgba(200,200,200,0.5)',
+        borderRadius: 2, border: '1px solid rgba(0,0,0,0.08)', zIndex: 1,
+      }} />
+
+      {/* 월 네비 */}
+      <div style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '18px 16px 12px',
+        borderBottom: `2px dashed ${C.muted}`,
+      }}>
+        <button onClick={() => onMonthChange(-1)} className="month-nav-btn" style={{
+          width: 36, height: 36, borderRadius: R.wobblyMd,
+          border: `3px solid ${C.border}`, background: C.muted,
+          boxShadow: S.small,
+          fontSize: 18, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}>‹</button>
+
         <div style={{ textAlign: 'center' }}>
-          <span style={{ fontWeight: 800, fontSize: 20, color: C.text }}>{month + 1}월</span>
-          <span style={{ marginLeft: 6, fontSize: 14, color: C.textMuted }}>{year}</span>
+          <h2 style={{
+            fontSize: 22, fontWeight: 700, color: C.text,
+            display: 'inline-block', transform: 'rotate(-0.5deg)',
+          }}>
+            {month + 1}월
+          </h2>
+          <span style={{ marginLeft: 6, fontSize: 14, color: '#888', fontFamily: "'Noto Sans KR', 'Patrick Hand', cursive" }}>{year}</span>
         </div>
-        <button onClick={() => onMonthChange(1)} style={{
-          width: 36, height: 36, borderRadius: '50%', background: C.bg,
-          color: C.textSub, fontSize: 18,
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
+
+        <button onClick={() => onMonthChange(1)} className="month-nav-btn" style={{
+          width: 36, height: 36, borderRadius: R.wobblyMd,
+          border: `3px solid ${C.border}`, background: C.muted,
+          boxShadow: S.small,
+          fontSize: 18, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}>›</button>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', padding: '0 4px' }}>
+      {/* 요일 헤더 */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', background: C.muted, padding: '4px 0' }}>
         {DAYS_KR.map((d, i) => (
           <div key={d} style={{
-            textAlign: 'center', fontSize: 11, fontWeight: 700,
-            color: i === 0 ? '#f43f5e' : i === 6 ? C.primary : C.textMuted,
-            padding: '6px 0',
+            textAlign: 'center', fontSize: 12, fontWeight: 700,
+            color: i === 0 ? C.accent : i === 6 ? C.accentBlue : '#555',
+            padding: '5px 0', fontFamily: "'Noto Sans KR', 'Kalam', cursive",
           }}>{d}</div>
         ))}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', paddingBottom: 16 }}>
+      {/* 날짜 그리드 */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', paddingBottom: 8 }}>
         {cells.map((d, idx) => {
-          if (d === null) return <div key={`e-${idx}`} style={{ height: 62 }} />
+          if (d === null) return <div key={`e-${idx}`} style={{ height: isDesktop ? 70 : 62 }} />
           const dateStr = toDateStr(year, month, d)
-          const slottedEvs = getSlottedEvents(dateStr)
+          const slottedEvs = visibleEvents.filter(ev => eventCoversDate(ev, dateStr))
           const hasEvents = slottedEvs.length > 0
           const isToday = dateStr === today
           const isSel = dateStr === selectedDate
@@ -345,19 +346,24 @@ function Calendar({ year, month, events, selectedDate, onSelectDate, onMonthChan
           const overflowCount = Math.max(0, slottedEvs.length - MAX_SLOTS)
 
           return (
-            <div key={dateStr} onClick={() => hasEvents && onSelectDate(dateStr)} style={{
-              height: isDesktop ? 72 : 62, position: 'relative',
-              cursor: hasEvents ? 'pointer' : 'default',
-            }}>
+            <div
+              key={dateStr}
+              onClick={() => hasEvents && onSelectDate(dateStr)}
+              className={hasEvents ? 'day-cell-clickable' : ''}
+              style={{ height: isDesktop ? 70 : 62, position: 'relative', cursor: hasEvents ? 'pointer' : 'default' }}
+            >
               <div style={{
                 position: 'absolute', top: 4, left: '50%', transform: 'translateX(-50%)',
-                width: 28, height: 28, borderRadius: '50%',
+                width: 28, height: 28,
+                borderRadius: isSel ? R.tag : isToday ? '50%' : 'none',
+                border: isToday ? `2px solid ${C.accent}` : isSel ? `2px solid ${C.accentBlue}` : 'none',
+                background: isSel ? C.accentBlue : isToday ? C.accent : 'transparent',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 zIndex: 2,
-                background: isSel ? C.primary : isToday ? C.primaryLight : 'transparent',
-                fontWeight: isSel || isToday ? 800 : 400,
+                fontWeight: isSel || isToday ? 700 : 400,
                 fontSize: 13,
-                color: isSel ? C.white : dow === 0 ? '#f43f5e' : dow === 6 ? C.primary : C.text,
+                color: isSel || isToday ? '#fff' : dow === 0 ? C.accent : dow === 6 ? C.accentBlue : C.text,
+                fontFamily: isToday || isSel ? "'Noto Sans KR', 'Kalam', cursive" : "'Noto Sans KR', 'Patrick Hand', cursive",
               }}>{d}</div>
 
               {slottedEvs.slice(0, MAX_SLOTS).map((ev, slotIdx) => {
@@ -365,33 +371,28 @@ function Calendar({ year, month, events, selectedDate, onSelectDate, onMonthChan
                 const isActualEnd = dateStr === ev.endDate
                 const isRowStart = dow === 0
                 const isRowEnd = dow === 6
-                const leftRound = isActualStart
-                const rightRound = isActualEnd
-                const leftInset = leftRound ? 5 : isRowStart ? 2 : 0
-                const rightInset = rightRound ? 5 : isRowEnd ? 2 : 0
-                const br = [
-                  leftRound ? 5 : isRowStart ? 3 : 0,
-                  rightRound ? 5 : isRowEnd ? 3 : 0,
-                  rightRound ? 5 : isRowEnd ? 3 : 0,
-                  leftRound ? 5 : isRowStart ? 3 : 0,
-                ].map(v => v + 'px').join(' ')
-
                 return (
                   <div key={ev.id} style={{
                     position: 'absolute',
-                    top: 36 + slotIdx * 8, height: 6,
-                    left: leftInset, right: rightInset,
+                    top: 36 + slotIdx * 8, height: 5,
+                    left: isActualStart ? 5 : isRowStart ? 2 : 0,
+                    right: isActualEnd ? 5 : isRowEnd ? 2 : 0,
                     background: getEventColor(ev),
-                    borderRadius: br, opacity: 0.9, zIndex: 1,
+                    borderRadius: [
+                      isActualStart ? 3 : 0,
+                      isActualEnd ? 3 : 0,
+                      isActualEnd ? 3 : 0,
+                      isActualStart ? 3 : 0,
+                    ].map(v => v + 'px').join(' '),
+                    zIndex: 1,
                   }} />
                 )
               })}
 
               {overflowCount > 0 && (
-                <div style={{
-                  position: 'absolute', bottom: 2, right: 3,
-                  fontSize: 9, color: C.textMuted, fontWeight: 700,
-                }}>+{overflowCount}</div>
+                <div style={{ position: 'absolute', bottom: 2, right: 3, fontSize: 9, color: '#888', fontWeight: 700 }}>
+                  +{overflowCount}
+                </div>
               )}
             </div>
           )
@@ -408,70 +409,86 @@ function EventList({ date, events, onSelect }) {
     .sort((a, b) => a.startDate < b.startDate ? -1 : 1)
 
   if (!date || filtered.length === 0) return (
-    <div style={{ textAlign: 'center', padding: '48px 24px', color: C.textMuted }}>
-      <div style={{ fontSize: 40, marginBottom: 12 }}>🗺️</div>
-      <div style={{ fontWeight: 600, marginBottom: 6, color: C.textSub }}>
-        {date ? '이 날짜엔 일정이 없어요' : '날짜를 클릭해 일정을 확인하세요'}
-      </div>
-      {!date && <div style={{ fontSize: 13 }}>+ 버튼으로 새 여행을 등록할 수 있어요</div>}
+    <div style={{ textAlign: 'center', padding: '48px 24px' }}>
+      <div style={{ fontSize: 48, marginBottom: 12, animation: 'bounce-gentle 3s ease-in-out infinite' }}>🗺️</div>
+      <p style={{ fontWeight: 700, fontSize: 16, color: '#555', fontFamily: "'Noto Sans KR', 'Kalam', cursive" }}>
+        {date ? '이 날엔 일정이 없어요!' : '날짜를 눌러보세요 👆'}
+      </p>
+      {!date && <p style={{ fontSize: 13, color: '#888' }}>+ 버튼으로 새 여행을 기록하세요</p>}
     </div>
   )
 
   const { m, d, dowKr } = formatDate(date)
 
   return (
-    <div style={{ padding: '16px 16px 24px' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
+    <div style={{ padding: '16px 16px 32px' }}>
+      {/* 날짜 라벨 */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
         <div style={{
-          background: C.grad, color: C.white, borderRadius: 12,
-          padding: '6px 14px', fontSize: 13, fontWeight: 700,
+          background: C.accent, color: '#fff',
+          border: `2px solid ${C.border}`, borderRadius: R.tag,
+          boxShadow: S.small,
+          padding: '4px 12px', fontSize: 13, fontWeight: 700,
+          fontFamily: "'Noto Sans KR', 'Kalam', cursive",
+          transform: 'rotate(-1deg)',
         }}>{m}월 {d}일 ({dowKr})</div>
-        <div style={{ fontSize: 13, color: C.textMuted }}>일정 {filtered.length}개</div>
+        <span style={{ fontSize: 12, color: '#888' }}>✏️ {filtered.length}개</span>
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-        {filtered.map(ev => {
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+        {filtered.map((ev, i) => {
           const nights = dayDiff(ev.startDate, ev.endDate)
+          const color = getEventColor(ev)
+          const rot = i % 3 === 0 ? '-1deg' : i % 3 === 1 ? '0.5deg' : '-0.5deg'
           return (
-            <button key={ev.id} onClick={() => onSelect(ev)} style={{
-              width: '100%', textAlign: 'left', background: C.white,
-              border: `1px solid ${C.border}`, borderRadius: 18, overflow: 'hidden',
-              boxShadow: '0 2px 12px rgba(45,106,79,0.08)',
-            }}>
-              <div style={{ height: 5, background: getEventColor(ev) }} />
-              <div style={{ padding: '14px 16px' }}>
-                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-                  <div style={{ flex: 1, marginRight: 8 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 5 }}>
-                      <span style={{ fontSize: 15 }}>✈️</span>
+            <button
+              key={ev.id}
+              onClick={() => onSelect(ev)}
+              className="event-card-sketch"
+              style={{
+                width: '100%', textAlign: 'left',
+                background: C.yellow,
+                border: `3px solid ${C.border}`,
+                borderRadius: R.wobblyMd,
+                boxShadow: S.base,
+                padding: '12px 14px',
+                transform: `rotate(${rot})`,
+                position: 'relative',
+              }}
+            >
+              {/* 핀 */}
+              <div style={{
+                position: 'absolute', top: -8, left: 20,
+                width: 14, height: 14, borderRadius: '50%',
+                background: color, border: `2px solid ${C.border}`,
+                boxShadow: '2px 2px 0px #2d2d2d',
+              }} />
+
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginTop: 2 }}>
+                <div style={{ flex: 1 }}>
+                  <div style={{
+                    fontFamily: "'Noto Sans KR', 'Kalam', cursive", fontWeight: 700,
+                    fontSize: 15, color: C.text, marginBottom: 4,
+                  }}>✈️ {ev.title}</div>
+                  <div style={{ fontSize: 12, color: '#555', lineHeight: 1.5 }}>
+                    📅 {fmtRange(ev)}
+                    {nights > 0 && (
                       <span style={{
-                        fontWeight: 700, fontSize: 15, color: C.text,
-                        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                      }}>{ev.title}</span>
-                    </div>
-                    <div style={{ fontSize: 12, color: C.textMuted, display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <span>📅 {fmtRange(ev)}</span>
-                      {nights > 0 && (
-                        <span style={{
-                          background: C.primaryLight, color: C.primary,
-                          borderRadius: 6, padding: '1px 6px', fontSize: 11, fontWeight: 700,
-                        }}>{nights}박 {nights + 1}일</span>
-                      )}
-                    </div>
-                    {ev.content && (
-                      <div style={{
-                        marginTop: 6, fontSize: 13, color: C.textSub, lineHeight: 1.5,
-                        overflow: 'hidden', textOverflow: 'ellipsis',
-                        display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
-                      }}>{ev.content}</div>
+                        marginLeft: 6,
+                        background: C.white, border: `1px solid ${C.border}`,
+                        borderRadius: R.tag, padding: '1px 6px', fontSize: 11, fontWeight: 700,
+                      }}>{nights}박 {nights + 1}일</span>
                     )}
                   </div>
-                  <div style={{
-                    width: 28, height: 28, borderRadius: '50%', background: C.bg,
-                    flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    color: C.primary, fontSize: 14,
-                  }}>›</div>
+                  {ev.content && (
+                    <div style={{
+                      marginTop: 5, fontSize: 12, color: '#666', lineHeight: 1.5,
+                      overflow: 'hidden', textOverflow: 'ellipsis',
+                      display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
+                    }}>{ev.content}</div>
+                  )}
                 </div>
+                <span style={{ fontSize: 18, color: '#aaa' }}>›</span>
               </div>
             </button>
           )
@@ -484,52 +501,72 @@ function EventList({ date, events, onSelect }) {
 // ── 일정 상세 ────────────────────────────────────────────────
 function EventDetail({ event, onEdit, onDelete }) {
   const nights = dayDiff(event.startDate, event.endDate)
+  const color = getEventColor(event)
   return (
-    <div style={{ flex: 1 }}>
-      <div style={{ background: C.grad, padding: '24px 24px 32px', marginTop: -1 }}>
-        <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.75)', marginBottom: 8 }}>
+    <div style={{ flex: 1, padding: '20px 16px 100px' }}>
+      {/* 타이틀 카드 */}
+      <div style={{
+        background: C.yellow, border: `3px solid ${C.border}`,
+        borderRadius: R.wobblyLg, boxShadow: S.large,
+        padding: '24px 20px', marginBottom: 20,
+        position: 'relative', transform: 'rotate(-0.5deg)',
+      }}>
+        {/* 핀 */}
+        <div style={{
+          position: 'absolute', top: -10, left: '50%', transform: 'translateX(-50%)',
+          width: 18, height: 18, borderRadius: '50%',
+          background: color, border: `3px solid ${C.border}`,
+          boxShadow: '2px 2px 0px #2d2d2d',
+        }} />
+
+        <div style={{
+          display: 'inline-flex', alignItems: 'center', gap: 6,
+          background: C.white, border: `2px solid ${C.border}`,
+          borderRadius: R.tag, boxShadow: S.small,
+          padding: '3px 10px', marginBottom: 10, fontSize: 12,
+          fontFamily: "'Noto Sans KR', 'Patrick Hand', cursive",
+        }}>
           📅 {fmtRange(event)}
-          {nights > 0 && (
-            <span style={{
-              marginLeft: 8, background: 'rgba(255,255,255,0.2)',
-              borderRadius: 8, padding: '2px 8px', fontSize: 12, fontWeight: 700,
-            }}>{nights}박 {nights + 1}일</span>
-          )}
+          {nights > 0 && <span style={{ fontWeight: 700, color: C.accentBlue }}>· {nights}박 {nights + 1}일</span>}
         </div>
-        <div style={{ fontSize: 24, fontWeight: 800, color: C.white, lineHeight: 1.3, letterSpacing: '-0.5px' }}>
-          {event.title}
-        </div>
-        <div style={{ marginTop: 12, fontSize: 12, color: 'rgba(255,255,255,0.55)' }}>
+
+        <h2 style={{ fontSize: 24, fontWeight: 700, color: C.text, lineHeight: 1.3, marginBottom: 8 }}>
+          ✈️ {event.title}
+        </h2>
+        <p style={{ fontSize: 12, color: '#888', margin: 0 }}>
           등록: {new Date(event.createdAt).toLocaleDateString('ko-KR')}
-        </div>
+        </p>
       </div>
 
-      <div style={{ padding: '20px 20px 100px' }}>
+      {/* 내용 카드 */}
+      <div style={{
+        background: C.white, border: `3px solid ${C.border}`,
+        borderRadius: R.wobblyMd, boxShadow: S.base,
+        padding: '18px 18px', marginBottom: 20,
+        transform: 'rotate(0.5deg)',
+      }}>
         <div style={{
-          background: C.white, borderRadius: 20, padding: '20px', marginTop: -16,
-          boxShadow: '0 4px 24px rgba(45,106,79,0.12)',
+          fontSize: 11, fontWeight: 700, color: C.accentBlue,
+          textTransform: 'uppercase', letterSpacing: '0.1em',
+          marginBottom: 10, fontFamily: "'Noto Sans KR', 'Kalam', cursive",
+          borderBottom: `2px dashed ${C.muted}`, paddingBottom: 6,
+        }}>📝 여행 내용</div>
+        <p style={{
+          fontSize: 15, color: event.content ? C.text : '#aaa',
+          lineHeight: 1.8, whiteSpace: 'pre-wrap', wordBreak: 'break-word',
+          minHeight: 80, margin: 0, fontStyle: event.content ? 'normal' : 'italic',
         }}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: C.primary, textTransform: 'uppercase', letterSpacing: 1.5, marginBottom: 10 }}>
-            여행 내용
-          </div>
-          <div style={{
-            fontSize: 15, color: event.content ? C.text : C.textMuted,
-            lineHeight: 1.8, whiteSpace: 'pre-wrap', wordBreak: 'break-word', minHeight: 80,
-          }}>
-            {event.content || '등록된 내용이 없습니다.'}
-          </div>
-        </div>
+          {event.content || '내용이 없어요. 메모를 남겨보세요 :)'}
+        </p>
+      </div>
 
-        <div style={{ display: 'flex', gap: 12, marginTop: 24 }}>
-          <button onClick={onEdit} style={{
-            flex: 1, padding: '15px', borderRadius: 16, fontSize: 15, fontWeight: 700,
-            background: C.primaryLight, color: C.primary, border: `1.5px solid ${C.primary}20`,
-          }}>✏️ 수정</button>
-          <button onClick={onDelete} style={{
-            flex: 1, padding: '15px', borderRadius: 16, fontSize: 15, fontWeight: 700,
-            background: C.dangerLight, color: C.danger, border: `1.5px solid ${C.danger}20`,
-          }}>🗑️ 삭제</button>
-        </div>
+      <div style={{ display: 'flex', gap: 12 }}>
+        <button onClick={onEdit} className="btn-sketch-blue" style={{
+          flex: 1, padding: '13px', fontSize: 14, fontWeight: 700,
+        }}>✏️ 수정</button>
+        <button onClick={onDelete} className="btn-danger-sketch" style={{
+          flex: 1, padding: '13px', fontSize: 14, fontWeight: 700,
+        }}>🗑️ 삭제</button>
       </div>
     </div>
   )
@@ -542,77 +579,83 @@ function PwModal({ title, onConfirm, onCancel, loading }) {
 
   function handleSubmit(e) {
     e.preventDefault()
-    if (!pw.trim()) { setErr('비밀번호를 입력해주세요.'); return }
+    if (!pw.trim()) { setErr('비밀번호를 입력해주세요!'); return }
     onConfirm(pw.trim())
   }
 
   return (
     <div
       style={{
-        position: 'fixed', inset: 0, background: 'rgba(30,75,50,0.5)',
-        display: 'flex', alignItems: 'flex-end', zIndex: 100, backdropFilter: 'blur(4px)',
+        position: 'fixed', inset: 0, background: 'rgba(45,45,45,0.4)',
+        display: 'flex', alignItems: 'flex-end', zIndex: 100,
       }}
       onClick={e => e.target === e.currentTarget && onCancel()}
     >
       <div style={{
         width: '100%', maxWidth: 480, margin: '0 auto',
-        background: C.white, borderRadius: '24px 24px 0 0', padding: '8px 0 0',
+        background: C.bg, borderTop: `3px solid ${C.border}`,
+        borderRadius: '24px 24px 0 0',
+        padding: '8px 24px 40px',
+        boxShadow: '0 -4px 0px 0px #2d2d2d',
       }}>
-        <div style={{ width: 40, height: 4, borderRadius: 2, background: C.border, margin: '12px auto 20px' }} />
-        <div style={{ padding: '0 24px 40px' }}>
-          <div style={{ fontWeight: 800, fontSize: 18, color: C.text, marginBottom: 6 }}>{title}</div>
-          <div style={{ fontSize: 13, color: C.textSub, marginBottom: 20 }}>🔒 등록 시 설정한 비밀번호를 입력하세요.</div>
-          <form onSubmit={handleSubmit}>
-            <input
-              type="password" autoFocus value={pw}
-              onChange={e => { setPw(e.target.value); setErr('') }}
-              placeholder="비밀번호"
-              disabled={loading}
-              style={{
-                width: '100%', padding: '15px 16px', borderRadius: 14, fontSize: 15,
-                border: `1.5px solid ${err ? C.danger : C.border}`,
-                outline: 'none', background: C.bg, marginBottom: 6, boxSizing: 'border-box',
-              }}
-            />
-            {err && <div style={{ color: C.danger, fontSize: 12, marginBottom: 10 }}>{err}</div>}
-            <div style={{ display: 'flex', gap: 10, marginTop: 14 }}>
-              <button type="button" onClick={onCancel} disabled={loading} style={{
-                flex: 1, padding: 15, borderRadius: 14, fontSize: 15, fontWeight: 600,
-                background: C.bg, color: C.textSub, opacity: loading ? 0.5 : 1,
-              }}>취소</button>
-              <button type="submit" disabled={loading} style={{
-                flex: 2, padding: 15, borderRadius: 14, fontSize: 15, fontWeight: 800,
-                background: C.grad, color: C.white, border: 'none',
-                opacity: loading ? 0.7 : 1,
-              }}>{loading ? '처리 중...' : '확인'}</button>
-            </div>
-          </form>
-        </div>
+        <div style={{ width: 40, height: 4, background: C.muted, borderRadius: 2, margin: '14px auto 20px' }} />
+        <h3 style={{ fontSize: 20, fontWeight: 700, marginBottom: 6, color: C.text }}>{title}</h3>
+        <p style={{ fontSize: 13, color: '#777', marginBottom: 18, marginTop: 0 }}>🔒 등록 시 설정한 비밀번호를 입력하세요.</p>
+        <form onSubmit={handleSubmit}>
+          <input
+            type="password" autoFocus value={pw}
+            onChange={e => { setPw(e.target.value); setErr('') }}
+            placeholder="비밀번호를 적어주세요..."
+            disabled={loading}
+            style={{
+              width: '100%', padding: '14px 16px', fontSize: 15,
+              border: `3px solid ${err ? C.accent : C.border}`,
+              borderRadius: R.wobblyMd, background: C.white,
+              boxShadow: err ? S.small : 'none',
+              marginBottom: 6, boxSizing: 'border-box', outline: 'none',
+            }}
+          />
+          {err && <p style={{ color: C.accent, fontSize: 12, margin: '0 0 10px', fontStyle: 'italic' }}>{err}</p>}
+          <div style={{ display: 'flex', gap: 10, marginTop: 14 }}>
+            <button type="button" onClick={onCancel} disabled={loading} className="btn-muted" style={{
+              flex: 1, padding: 14, fontSize: 15, fontWeight: 700, opacity: loading ? 0.5 : 1,
+            }}>취소</button>
+            <button type="submit" disabled={loading} className="btn-sketch" style={{
+              flex: 2, padding: 14, fontSize: 15, fontWeight: 700, opacity: loading ? 0.7 : 1,
+            }}>{loading ? '처리 중... ✏️' : '확인 ✓'}</button>
+          </div>
+        </form>
       </div>
     </div>
   )
 }
 
-// ── 폼 필드 래퍼 (컴포넌트 외부 정의 필수) ──────────────────
+// ── 폼 필드 ───────────────────────────────────────────────────
 function FormField({ label, error, hint, children }) {
   return (
     <div style={{ marginBottom: 20 }}>
       <label style={{
-        display: 'block', fontSize: 12, fontWeight: 700,
-        color: C.primary, letterSpacing: 1, marginBottom: 8, textTransform: 'uppercase',
+        display: 'block', fontSize: 13, fontWeight: 700,
+        color: C.accentBlue, marginBottom: 7,
+        fontFamily: "'Noto Sans KR', 'Kalam', cursive",
       }}>{label}</label>
       {children}
-      {hint && <div style={{ fontSize: 12, color: C.textMuted, marginTop: 5 }}>{hint}</div>}
-      {error && <div style={{ color: C.danger, fontSize: 12, marginTop: 5 }}>{error}</div>}
+      {hint && <p style={{ fontSize: 12, color: '#888', marginTop: 5, margin: '5px 0 0', fontStyle: 'italic' }}>{hint}</p>}
+      {error && <p style={{ color: C.accent, fontSize: 12, marginTop: 5, margin: '5px 0 0', fontStyle: 'italic' }}>{error}</p>}
     </div>
   )
 }
 
 function inputCss(hasErr) {
   return {
-    width: '100%', padding: '15px 16px', borderRadius: 14, fontSize: 15,
-    border: `1.5px solid ${hasErr ? C.danger : C.border}`,
-    outline: 'none', background: C.bg, boxSizing: 'border-box',
+    width: '100%', padding: '13px 15px', fontSize: 15,
+    border: `3px solid ${hasErr ? C.accent : C.border}`,
+    borderRadius: R.wobblyMd,
+    background: C.white,
+    boxSizing: 'border-box', color: C.text,
+    outline: 'none',
+    boxShadow: hasErr ? S.small : 'none',
+    transition: 'border-color 0.15s, box-shadow 0.15s',
   }
 }
 
@@ -633,11 +676,11 @@ function EventForm({ initialDate, editEvent, onSave, onCancel, submitting }) {
 
   function validate() {
     const e = {}
-    if (!title.trim()) e.title = '여행 제목을 입력해주세요.'
-    if (!startDate) e.startDate = '시작 날짜를 선택해주세요.'
-    if (!endDate) e.endDate = '종료 날짜를 선택해주세요.'
-    if (endDate < startDate) e.endDate = '종료 날짜는 시작 날짜 이후여야 합니다.'
-    if (!editEvent && !pw.trim()) e.pw = '비밀번호를 입력해주세요.'
+    if (!title.trim()) e.title = '여행 제목을 써주세요!'
+    if (!startDate) e.startDate = '시작 날짜를 골라주세요.'
+    if (!endDate) e.endDate = '종료 날짜를 골라주세요.'
+    if (endDate < startDate) e.endDate = '종료 날짜가 시작 날짜보다 빨라요!'
+    if (!editEvent && !pw.trim()) e.pw = '비밀번호를 설정해주세요.'
     return e
   }
 
@@ -649,8 +692,7 @@ function EventForm({ initialDate, editEvent, onSave, onCancel, submitting }) {
       onSave({ ...editEvent, startDate, endDate, title: title.trim(), content: content.trim() })
     } else {
       onSave({
-        id: Date.now().toString(),
-        startDate, endDate,
+        id: Date.now().toString(), startDate, endDate,
         title: title.trim(), content: content.trim(),
         pwHash: simpleHash(pw.trim()),
         createdAt: new Date().toISOString(),
@@ -661,50 +703,58 @@ function EventForm({ initialDate, editEvent, onSave, onCancel, submitting }) {
   const nights = startDate && endDate ? dayDiff(startDate, endDate) : 0
 
   return (
-    <div style={{ flex: 1 }}>
-      <div style={{ background: C.grad, padding: '24px', display: 'flex', alignItems: 'center', gap: 12, marginTop: -1 }}>
-        <div style={{
-          width: 48, height: 48, borderRadius: 16, background: 'rgba(255,255,255,0.2)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24,
-        }}>✈️</div>
+    <div style={{ flex: 1, padding: '20px 16px 100px' }}>
+      {/* 폼 헤더 카드 */}
+      <div style={{
+        background: C.yellow, border: `3px solid ${C.border}`,
+        borderRadius: R.wobblyLg, boxShadow: S.base,
+        padding: '16px 18px', marginBottom: 24,
+        display: 'flex', alignItems: 'center', gap: 12,
+        transform: 'rotate(-0.5deg)',
+      }}>
+        <span style={{ fontSize: 32 }}>✈️</span>
         <div>
-          <div style={{ fontSize: 18, fontWeight: 800, color: C.white }}>
-            {editEvent ? '여행 일정 수정' : '새 여행 등록'}
-          </div>
-          <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)', marginTop: 2 }}>
-            {editEvent ? '내용을 수정하세요' : '고난크루의 새 여행을 공유하세요'}
-          </div>
+          <h2 style={{ fontSize: 18, fontWeight: 700, color: C.text, marginBottom: 2 }}>
+            {editEvent ? '여행 일정 수정' : '새 여행 등록!'}
+          </h2>
+          <p style={{ fontSize: 12, color: '#666', margin: 0 }}>
+            {editEvent ? '내용을 고쳐보세요 ✏️' : '고난크루의 새 여행을 기록하세요 🗺️'}
+          </p>
         </div>
       </div>
 
-      <form onSubmit={handleSubmit} style={{ padding: '24px 20px 100px' }}>
+      <form onSubmit={handleSubmit}>
+        {/* 날짜 */}
         <div style={{ marginBottom: 20 }}>
           <label style={{
-            display: 'block', fontSize: 12, fontWeight: 700,
-            color: C.primary, letterSpacing: 1, marginBottom: 8, textTransform: 'uppercase',
+            display: 'block', fontSize: 13, fontWeight: 700,
+            color: C.accentBlue, marginBottom: 7, fontFamily: "'Noto Sans KR', 'Kalam', cursive",
           }}>📅 여행 날짜</label>
           <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 11, color: C.textMuted, marginBottom: 4, fontWeight: 600 }}>시작</div>
+              <div style={{ fontSize: 11, color: '#888', marginBottom: 4, fontWeight: 700 }}>시작</div>
               <input type="date" value={startDate} onChange={e => handleStartDate(e.target.value)} style={inputCss(errors.startDate)} />
             </div>
-            <div style={{ paddingTop: 26, color: C.textMuted, fontWeight: 700, fontSize: 16 }}>~</div>
+            <div style={{ paddingTop: 26, color: '#aaa', fontWeight: 700, fontSize: 18 }}>~</div>
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 11, color: C.textMuted, marginBottom: 4, fontWeight: 600 }}>종료</div>
+              <div style={{ fontSize: 11, color: '#888', marginBottom: 4, fontWeight: 700 }}>종료</div>
               <input type="date" value={endDate} min={startDate}
                 onChange={e => { setEndDate(e.target.value); setErrors(v => ({ ...v, endDate: null })) }}
                 style={inputCss(errors.endDate)} />
             </div>
           </div>
-          {errors.startDate && <div style={{ color: C.danger, fontSize: 12, marginTop: 5 }}>{errors.startDate}</div>}
-          {errors.endDate && <div style={{ color: C.danger, fontSize: 12, marginTop: 5 }}>{errors.endDate}</div>}
+          {errors.startDate && <p style={{ color: C.accent, fontSize: 12, margin: '5px 0 0', fontStyle: 'italic' }}>{errors.startDate}</p>}
+          {errors.endDate && <p style={{ color: C.accent, fontSize: 12, margin: '5px 0 0', fontStyle: 'italic' }}>{errors.endDate}</p>}
           {nights > 0 && (
             <div style={{
               marginTop: 10, display: 'inline-flex', alignItems: 'center', gap: 6,
-              background: C.primaryLight, borderRadius: 10, padding: '6px 12px',
+              background: C.accentBlue, color: '#fff',
+              border: `2px solid ${C.border}`, borderRadius: R.tag,
+              boxShadow: S.small, padding: '4px 12px',
+              transform: 'rotate(-1deg)',
             }}>
-              <span style={{ fontSize: 14 }}>🌙</span>
-              <span style={{ fontSize: 13, fontWeight: 700, color: C.primary }}>{nights}박 {nights + 1}일</span>
+              <span>🌙</span>
+              <span style={{ fontSize: 13, fontWeight: 700, fontFamily: "'Noto Sans KR', 'Kalam', cursive" }}>{nights}박 {nights + 1}일</span>
             </div>
           )}
         </div>
@@ -715,30 +765,28 @@ function EventForm({ initialDate, editEvent, onSave, onCancel, submitting }) {
             placeholder="예) 제주도 3박 4일" style={inputCss(errors.title)} />
         </FormField>
 
-        <FormField label="📝 여행 내용" error={null}>
+        <FormField label="📝 여행 내용">
           <textarea value={content} onChange={e => setContent(e.target.value)}
             placeholder={"장소, 숙소, 준비물 등\n자유롭게 적어주세요 🏖️"}
             rows={5} style={{ ...inputCss(false), resize: 'vertical', lineHeight: 1.7 }} />
         </FormField>
 
         {!editEvent && (
-          <FormField label="🔒 비밀번호" error={errors.pw} hint="이 비밀번호로만 수정·삭제할 수 있습니다.">
+          <FormField label="🔒 비밀번호" error={errors.pw} hint="이 비밀번호로만 수정·삭제할 수 있어요.">
             <input type="password" value={pw}
               onChange={e => { setPw(e.target.value); setErrors(v => ({ ...v, pw: null })) }}
-              placeholder="수정·삭제 시 사용할 비밀번호" style={inputCss(errors.pw)} />
+              placeholder="나만의 비밀 암호..." style={inputCss(errors.pw)} />
           </FormField>
         )}
 
         <div style={{ display: 'flex', gap: 12, marginTop: 24 }}>
-          <button type="button" onClick={onCancel} disabled={submitting} style={{
-            flex: 1, padding: '16px', borderRadius: 16, fontSize: 15, fontWeight: 600,
-            background: C.bg, color: C.textSub, opacity: submitting ? 0.5 : 1,
+          <button type="button" onClick={onCancel} disabled={submitting} className="btn-muted" style={{
+            flex: 1, padding: '14px', fontSize: 15, fontWeight: 700, opacity: submitting ? 0.5 : 1,
           }}>취소</button>
-          <button type="submit" disabled={submitting} style={{
-            flex: 2, padding: '16px', borderRadius: 16, fontSize: 15, fontWeight: 800,
-            background: C.grad, color: C.white, border: 'none', opacity: submitting ? 0.7 : 1,
+          <button type="submit" disabled={submitting} className="btn-sketch" style={{
+            flex: 2, padding: '14px', fontSize: 15, fontWeight: 700, opacity: submitting ? 0.7 : 1,
           }}>
-            {submitting ? '저장 중...' : editEvent ? '✅ 수정 완료' : '🚀 여행 등록'}
+            {submitting ? '저장 중... ✏️' : editEvent ? '✅ 수정 완료!' : '🚀 여행 등록!'}
           </button>
         </div>
       </form>
@@ -750,10 +798,12 @@ function EventForm({ initialDate, editEvent, onSave, onCancel, submitting }) {
 function Toast({ msg }) {
   return (
     <div style={{
-      position: 'fixed', bottom: 88, left: '50%', transform: 'translateX(-50%)',
-      background: 'rgba(27,67,50,0.9)', color: C.white,
-      padding: '11px 22px', borderRadius: 24, fontSize: 13, fontWeight: 600, zIndex: 200,
-      whiteSpace: 'nowrap', boxShadow: '0 4px 20px rgba(45,106,79,0.35)',
+      position: 'fixed', bottom: 88, left: '50%', transform: 'translateX(-50%) rotate(-1deg)',
+      background: C.yellow, color: C.text,
+      border: `3px solid ${C.border}`, borderRadius: R.wobblyMd,
+      boxShadow: S.base,
+      padding: '10px 20px', fontSize: 14, fontWeight: 700, zIndex: 200,
+      whiteSpace: 'nowrap', fontFamily: "'Noto Sans KR', 'Kalam', cursive",
     }}>{msg}</div>
   )
 }
@@ -773,14 +823,13 @@ export default function App() {
   const [pwModal, setPwModal] = useState(null)
   const [toast, setToast] = useState(null)
 
-  // 앱 시작 시 GAS에서 전체 이벤트 로드
   useEffect(() => {
     gasGet()
       .then(res => {
         if (res.status === 'ok') setEvents(res.data)
-        else showToast('❌ 데이터를 불러오지 못했습니다.')
+        else showToast('❌ 데이터를 불러오지 못했어요')
       })
-      .catch(() => showToast('❌ 서버 연결에 실패했습니다.'))
+      .catch(() => showToast('❌ 서버 연결 실패'))
       .finally(() => setLoading(false))
   }, [])
 
@@ -802,55 +851,48 @@ export default function App() {
     try {
       if (editingEvent) {
         const res = await gasPost({ action: 'update', ...ev })
-        if (res.status === 'unauthorized') { showToast('🔒 비밀번호가 올바르지 않습니다.'); return }
-        if (res.status !== 'updated') { showToast('❌ 수정에 실패했습니다.'); return }
+        if (res.status === 'unauthorized') { showToast('🔒 비밀번호가 틀렸어요!'); return }
+        if (res.status !== 'updated') { showToast('❌ 수정 실패'); return }
         setEvents(prev => prev.map(e => e.id === ev.id ? ev : e))
-        setSelectedEvent(ev)
-        setView(VIEW.DETAIL)
-        showToast('✅ 일정이 수정되었습니다.')
+        setSelectedEvent(ev); setView(VIEW.DETAIL)
+        showToast('✅ 수정됐어요!')
       } else {
         const res = await gasPost({ action: 'create', ...ev })
-        if (res.status !== 'created') { showToast('❌ 등록에 실패했습니다.'); return }
+        if (res.status !== 'created') { showToast('❌ 등록 실패'); return }
         setEvents(prev => [...prev, ev])
         setSelectedDate(ev.startDate)
         const [y, m] = ev.startDate.split('-').map(Number)
-        setYear(y); setMonth(m - 1)
-        setView(VIEW.CALENDAR)
-        showToast('🚀 여행 일정이 등록되었습니다!')
+        setYear(y); setMonth(m - 1); setView(VIEW.CALENDAR)
+        showToast('🚀 여행 등록 완료!')
       }
     } catch {
-      showToast('❌ 오류가 발생했습니다.')
+      showToast('❌ 오류가 발생했어요')
     } finally {
-      setSubmitting(false)
-      setEditingEvent(null)
+      setSubmitting(false); setEditingEvent(null)
     }
   }
 
   async function handlePwConfirm(pw) {
     const hash = simpleHash(pw)
-    // 클라이언트 1차 검증
     if (hash !== selectedEvent.pwHash) {
-      showToast('🔒 비밀번호가 올바르지 않습니다.')
+      showToast('🔒 비밀번호가 틀렸어요!')
       setPwModal(null); return
     }
     if (pwModal.action === 'edit') {
-      setEditingEvent(selectedEvent); setPwModal(null); setView(VIEW.FORM)
-      return
+      setEditingEvent(selectedEvent); setPwModal(null); setView(VIEW.FORM); return
     }
-    // 삭제: 서버에서 2차 검증 후 삭제
     setSubmitting(true)
     try {
       const res = await gasPost({ action: 'delete', id: selectedEvent.id, pwHash: hash })
-      if (res.status === 'unauthorized') { showToast('🔒 비밀번호가 올바르지 않습니다.'); return }
-      if (res.status !== 'deleted') { showToast('❌ 삭제에 실패했습니다.'); return }
+      if (res.status === 'unauthorized') { showToast('🔒 비밀번호가 틀렸어요!'); return }
+      if (res.status !== 'deleted') { showToast('❌ 삭제 실패'); return }
       setEvents(prev => prev.filter(e => e.id !== selectedEvent.id))
       setSelectedEvent(null); setView(VIEW.CALENDAR)
-      showToast('🗑️ 일정이 삭제되었습니다.')
+      showToast('🗑️ 삭제됐어요!')
     } catch {
-      showToast('❌ 오류가 발생했습니다.')
+      showToast('❌ 오류가 발생했어요')
     } finally {
-      setSubmitting(false)
-      setPwModal(null)
+      setSubmitting(false); setPwModal(null)
     }
   }
 
@@ -864,19 +906,20 @@ export default function App() {
     : null
   const onAdd = view === VIEW.CALENDAR ? handleAddClick : null
 
-  // 데스크탑: 캘린더 화면은 2컬럼, 폼/상세는 중앙 카드
   const desktopCardStyle = {
-    maxWidth: 680, margin: '40px auto', width: '100%',
-    background: C.white, borderRadius: 24,
-    boxShadow: '0 8px 40px rgba(45,106,79,0.13)',
+    maxWidth: 680, margin: '32px auto', width: '100%',
+    background: C.white,
+    border: `3px solid ${C.border}`,
+    borderRadius: R.wobblyLg,
+    boxShadow: S.large,
     overflow: 'hidden',
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100svh', background: C.bg }}>
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100svh' }}>
       <Header view={view} onBack={onBack} onAdd={onAdd} isDesktop={isDesktop} />
 
-      <div style={{ flex: 1, overflowY: 'auto' }}>
+      <div style={{ flex: 1, overflowY: 'auto', paddingTop: isDesktop ? 64 : 60 }}>
         {loading ? (
           <Spinner fullPage />
         ) : (
@@ -890,7 +933,7 @@ export default function App() {
                   onMonthChange={handleMonthChange}
                   isDesktop={false}
                 />
-                <div style={{ marginTop: 20 }}>
+                <div style={{ marginTop: 8 }}>
                   <EventList date={selectedDate} events={events} onSelect={handleSelectEvent} />
                 </div>
               </>
@@ -899,9 +942,8 @@ export default function App() {
             {view === VIEW.CALENDAR && isDesktop && (
               <div style={{
                 maxWidth: 1200, margin: '0 auto', padding: '32px 40px 60px',
-                display: 'grid', gridTemplateColumns: '1fr 420px', gap: 28, alignItems: 'start',
+                display: 'grid', gridTemplateColumns: '1fr 400px', gap: 28, alignItems: 'start',
               }}>
-                {/* 왼쪽: 캘린더 */}
                 <Calendar
                   year={year} month={month} events={events}
                   selectedDate={selectedDate}
@@ -909,25 +951,25 @@ export default function App() {
                   onMonthChange={handleMonthChange}
                   isDesktop={true}
                 />
-                {/* 오른쪽: 일정 목록 패널 */}
                 <div style={{
-                  background: C.white, borderRadius: 20,
-                  boxShadow: '0 4px 20px rgba(45,106,79,0.10)',
+                  background: C.white, border: `3px solid ${C.border}`,
+                  borderRadius: R.wobblyLg, boxShadow: S.large,
                   minHeight: 480, overflow: 'hidden',
+                  transform: 'rotate(0.5deg)',
                 }}>
                   <div style={{
-                    background: C.grad, padding: '20px 24px',
-                    fontSize: 15, fontWeight: 700, color: C.white,
+                    background: C.yellow, padding: '14px 18px',
+                    borderBottom: `2px dashed ${C.border}`,
                   }}>
-                    {selectedDate ? (() => {
-                      const { m, d, dowKr } = formatDate(selectedDate)
-                      const cnt = events.filter(ev => eventCoversDate(ev, selectedDate)).length
-                      return `${m}월 ${d}일 (${dowKr}) · ${cnt}개`
-                    })() : '날짜를 선택하세요'}
+                    <h3 style={{ fontSize: 15, fontWeight: 700, color: C.text, margin: 0 }}>
+                      {selectedDate ? (() => {
+                        const { m, d, dowKr } = formatDate(selectedDate)
+                        const cnt = events.filter(ev => eventCoversDate(ev, selectedDate)).length
+                        return `📋 ${m}월 ${d}일 (${dowKr}) · ${cnt}개`
+                      })() : '📋 날짜를 클릭하세요'}
+                    </h3>
                   </div>
-                  <div style={{ padding: '0 0 24px' }}>
-                    <EventList date={selectedDate} events={events} onSelect={handleSelectEvent} />
-                  </div>
+                  <EventList date={selectedDate} events={events} onSelect={handleSelectEvent} />
                 </div>
               </div>
             )}
