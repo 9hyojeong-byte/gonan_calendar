@@ -349,7 +349,7 @@ function Calendar({ year, month, events, selectedDate, onSelectDate, onMonthChan
         position: 'absolute', top: -7, left: '30%',
         transform: 'rotate(-1.5deg)',
         width: 52, height: 14, background: 'rgba(200,200,200,0.5)',
-        borderRadius: 2, border: '1px solid rgba(0,0,0,0.08)', zIndex: 10,
+        borderRadius: 2, border: '1px solid rgba(0,0,0,0.08)', zIndex: 2,
       }} />
     <div style={{
       background: C.white,
