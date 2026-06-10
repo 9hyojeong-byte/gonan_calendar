@@ -496,19 +496,23 @@ function Calendar({ year, month, events, selectedDate, onSelectDate, onMonthChan
                           key={dateStr}
                           onClick={() => onSelectDate(dateStr)}
                           className="day-cell-clickable"
-                          style={{ height: cellH, position: 'relative', cursor: 'pointer' }}
+                          style={{
+                            height: cellH, position: 'relative', cursor: 'pointer',
+                            background: isSel ? '#fffacd' : 'transparent',
+                            transition: 'background 0.15s',
+                          }}
                         >
                           <div style={{
                             position: 'absolute', top: 4, left: '50%', transform: 'translateX(-50%)',
                             width: 28, height: 28,
-                            borderRadius: isSel ? R.tag : isToday ? '50%' : 'none',
-                            border: isToday ? `2px solid ${C.accent}` : isSel ? `2px solid ${C.accentBlue}` : 'none',
-                            background: isSel ? C.accentBlue : isToday ? C.accent : 'transparent',
+                            borderRadius: isToday ? '50%' : 'none',
+                            border: isToday ? `2px solid ${C.accent}` : 'none',
+                            background: isToday ? C.accent : 'transparent',
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
                             zIndex: 2,
-                            fontWeight: isSel || isToday ? 700 : 400,
+                            fontWeight: isToday ? 700 : isSel ? 800 : 400,
                             fontSize: 13,
-                            color: isSel || isToday ? '#fff' : dow === 6 ? C.accent : dow === 5 ? C.accentBlue : C.text,
+                            color: isToday ? '#fff' : isSel ? '#7a6000' : dow === 6 ? C.accent : dow === 5 ? C.accentBlue : C.text,
                             fontFamily: isToday || isSel ? "'Noto Sans KR', 'Kalam', cursive" : "'Noto Sans KR', 'Patrick Hand', cursive",
                           }}>{d}</div>
 
@@ -528,33 +532,56 @@ function Calendar({ year, month, events, selectedDate, onSelectDate, onMonthChan
                       const isActualStart = weekDates[startCol] === ev.startDate
                       const isActualEnd   = weekDates[endCol]   === ev.endDate
                       const span = endCol - startCol + 1
+
+                      // 이 이벤트의 시작 날짜에 일정이 1개뿐이면 2배 높이 + 2줄 텍스트
+                      const startDateStr = isActualStart ? weekDates[startCol] : null
+                      const eventsOnStartDate = startDateStr
+                        ? slotted.filter(s => s.ev.startDate <= startDateStr && s.ev.endDate >= startDateStr).length
+                        : 99
+                      const isSolo = isActualStart && eventsOnStartDate === 1
+                      const thisBarH = isSolo ? barH * 2 : barH
+
                       return (
                         <div key={ev.id} style={{
                           position: 'absolute',
                           top: barTop + slot * barGap,
-                          height: barH,
+                          height: thisBarH,
                           left:  `calc(${startCol / 7 * 100}% + ${isActualStart ? 3 : 0}px)`,
                           width: `calc(${span / 7 * 100}% - ${(isActualStart ? 3 : 0) + (isActualEnd ? 3 : 0)}px)`,
                           background: getEventColor(ev),
                           borderRadius: [
-                            isActualStart ? 3 : 0,
-                            isActualEnd   ? 3 : 0,
-                            isActualEnd   ? 3 : 0,
-                            isActualStart ? 3 : 0,
+                            isActualStart ? 4 : 0,
+                            isActualEnd   ? 4 : 0,
+                            isActualEnd   ? 4 : 0,
+                            isActualStart ? 4 : 0,
                           ].map(v => v + 'px').join(' '),
                           zIndex: 1,
                           overflow: 'hidden',
-                          display: 'flex', alignItems: 'center',
-                          paddingLeft: isActualStart ? 4 : 2,
+                          display: 'flex',
+                          alignItems: isSolo ? 'flex-start' : 'center',
+                          paddingLeft: isActualStart ? 5 : 2,
                           paddingRight: 4,
+                          paddingTop: isSolo ? 3 : 0,
                         }}>
                           {showTitles && (
-                            <span style={{
-                              fontSize: isDesktop ? 12 : 11, fontWeight: 700, color: '#fff',
-                              whiteSpace: 'nowrap', overflow: 'hidden',
-                              textOverflow: 'ellipsis', lineHeight: 1,
-                              fontFamily: "'Noto Sans KR', sans-serif",
-                            }}>{ev.title}</span>
+                            isSolo ? (
+                              <span style={{
+                                fontSize: isDesktop ? 12 : 11, fontWeight: 700, color: '#fff',
+                                lineHeight: 1.3,
+                                fontFamily: "'Noto Sans KR', sans-serif",
+                                display: '-webkit-box',
+                                WebkitLineClamp: 2,
+                                WebkitBoxOrient: 'vertical',
+                                overflow: 'hidden',
+                              }}>{ev.title}</span>
+                            ) : (
+                              <span style={{
+                                fontSize: isDesktop ? 12 : 11, fontWeight: 700, color: '#fff',
+                                whiteSpace: 'nowrap', overflow: 'hidden',
+                                textOverflow: 'ellipsis', lineHeight: 1,
+                                fontFamily: "'Noto Sans KR', sans-serif",
+                              }}>{ev.title}</span>
+                            )
                           )}
                         </div>
                       )
