@@ -194,7 +194,7 @@ function linkify(text) {
 }
 
 const VIEW = { CALENDAR: 'calendar', DETAIL: 'detail', FORM: 'form' }
-const DAYS_KR = ['일', '월', '화', '수', '목', '금', '토']
+const DAYS_KR = ['월', '화', '수', '목', '금', '토', '일']
 const MAX_SLOTS = 3
 
 const SHEET_URL = 'https://docs.google.com/spreadsheets/d/1I-j29J_sau7mJpjfmXrsyvtK2Xe-NqGByOyW3YNzpNI/edit?gid=2140106036#gid=2140106036'
@@ -323,10 +323,13 @@ function Spinner({ fullPage }) {
 // ── 캘린더 ───────────────────────────────────────────────────
 function Calendar({ year, month, events, selectedDate, onSelectDate, onMonthChange, onMonthClick, isDesktop }) {
   const today = todayStr()
-  const firstDay = new Date(year, month, 1).getDay()
+  const firstDay = (new Date(year, month, 1).getDay() + 6) % 7  // 월요일=0 기준
   const daysInMonth = new Date(year, month + 1, 0).getDate()
   const monthStart = toDateStr(year, month, 1)
   const monthEnd = toDateStr(year, month, daysInMonth)
+  const [showTitles, setShowTitles] = useState(() => {
+    try { return localStorage.getItem('cal_showTitles') !== '0' } catch { return true }
+  })
 
   const visibleEvents = events
     .filter(ev => ev.startDate <= monthEnd && ev.endDate >= monthStart)
@@ -344,6 +347,7 @@ function Calendar({ year, month, events, selectedDate, onSelectDate, onMonthChan
       borderRadius: R.wobblyLg,
       boxShadow: S.large,
       position: 'relative',
+      overflow: 'hidden',
     }}>
       {/* 테이프 장식 */}
       <div style={{
@@ -353,36 +357,68 @@ function Calendar({ year, month, events, selectedDate, onSelectDate, onMonthChan
         borderRadius: 2, border: '1px solid rgba(0,0,0,0.08)', zIndex: 1,
       }} />
 
-      {/* 월 네비 */}
+      {/* 월 네비 + 토글 */}
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '18px 16px 12px',
+        padding: '17px 16px 13px',
         borderBottom: `2px dashed ${C.muted}`,
       }}>
-        <button onClick={() => onMonthChange(-1)} className="month-nav-btn" style={{
-          width: 36, height: 36, borderRadius: R.wobblyMd,
-          border: `3px solid ${C.border}`, background: C.muted,
-          boxShadow: S.small,
-          fontSize: 18, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center',
-        }}>‹</button>
+        {/* 이전/월타이틀/다음 — 바짝 붙인 그룹 */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+          <button onClick={() => onMonthChange(-1)} className="month-nav-btn" style={{
+            width: 30, height: 30, borderRadius: R.wobblyMd,
+            border: `2px solid ${C.border}`, background: C.muted,
+            boxShadow: S.small,
+            fontSize: 16, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>‹</button>
 
-        <div style={{ textAlign: 'center', cursor: 'pointer' }} onClick={onMonthClick}>
-          <h2 style={{
-            fontSize: 22, fontWeight: 700, color: C.text,
-            display: 'inline-block', transform: 'rotate(-0.5deg)',
-            textDecoration: 'underline dotted', textUnderlineOffset: 4,
-          }}>
-            {month + 1}월
-          </h2>
-          <span style={{ marginLeft: 6, fontSize: 14, color: '#888', fontFamily: "'Noto Sans KR', 'Patrick Hand', cursive" }}>{year}</span>
+          <div style={{ textAlign: 'center', cursor: 'pointer' }} onClick={onMonthClick}>
+            <h2 style={{
+              fontSize: 20, fontWeight: 700, color: C.text,
+              display: 'inline-block', transform: 'rotate(-0.5deg)',
+              textDecoration: 'underline dotted', textUnderlineOffset: 4,
+              margin: 0,
+            }}>
+              {month + 1}월
+            </h2>
+            <span style={{ marginLeft: 5, fontSize: 13, color: '#888', fontFamily: "'Noto Sans KR', 'Patrick Hand', cursive" }}>{year}</span>
+          </div>
+
+          <button onClick={() => onMonthChange(1)} className="month-nav-btn" style={{
+            width: 30, height: 30, borderRadius: R.wobblyMd,
+            border: `2px solid ${C.border}`, background: C.muted,
+            boxShadow: S.small,
+            fontSize: 16, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>›</button>
         </div>
 
-        <button onClick={() => onMonthChange(1)} className="month-nav-btn" style={{
-          width: 36, height: 36, borderRadius: R.wobblyMd,
-          border: `3px solid ${C.border}`, background: C.muted,
-          boxShadow: S.small,
-          fontSize: 18, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center',
-        }}>›</button>
+        {/* 제목 보기 토글 — 우측 */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+          <span style={{ fontSize: 11, color: '#888', fontFamily: "'Noto Sans KR', sans-serif" }}>제목</span>
+          <div
+            onClick={() => {
+              const next = !showTitles
+              setShowTitles(next)
+              try { localStorage.setItem('cal_showTitles', next ? '1' : '0') } catch {}
+            }}
+            style={{
+              width: 36, height: 20, borderRadius: 10,
+              background: showTitles ? C.accentBlue : C.muted,
+              border: `2px solid ${C.border}`,
+              position: 'relative', cursor: 'pointer',
+              transition: 'background 0.2s',
+              boxShadow: S.small,
+            }}
+          >
+            <div style={{
+              position: 'absolute', top: 1,
+              left: showTitles ? 17 : 1,
+              width: 14, height: 14, borderRadius: '50%',
+              background: C.white, border: `1.5px solid ${C.border}`,
+              transition: 'left 0.2s',
+            }} />
+          </div>
+        </div>
       </div>
 
       {/* 요일 헤더 */}
@@ -390,90 +426,146 @@ function Calendar({ year, month, events, selectedDate, onSelectDate, onMonthChan
         {DAYS_KR.map((d, i) => (
           <div key={d} style={{
             textAlign: 'center', fontSize: 12, fontWeight: 700,
-            color: i === 0 ? C.accent : i === 6 ? C.accentBlue : '#555',
+            color: i === 6 ? C.accent : i === 5 ? C.accentBlue : '#555',
             padding: '5px 0', fontFamily: "'Noto Sans KR', 'Kalam', cursive",
           }}>{d}</div>
         ))}
       </div>
 
-      {/* 날짜 그리드 */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', paddingBottom: 8 }}>
-        {cells.map((d, idx) => {
-          if (d === null) return <div key={`e-${idx}`} style={{ height: isDesktop ? 91 : 80 }} />
-          const dateStr = toDateStr(year, month, d)
-          const slottedEvs = visibleEvents.filter(ev => eventCoversDate(ev, dateStr))
-          const hasEvents = slottedEvs.length > 0
-          const isToday = dateStr === today
-          const isSel = dateStr === selectedDate
-          const dow = (firstDay + d - 1) % 7
-          const overflowCount = Math.max(0, slottedEvs.length - MAX_SLOTS)
+      {/* 날짜 그리드 — 주(week) 단위로 렌더링해서 이벤트 바가 여러 칸에 걸치게 함 */}
+      {(() => {
+        const weeks = []
+        for (let i = 0; i < cells.length; i += 7) weeks.push(cells.slice(i, i + 7))
+        const cellH  = isDesktop ? (showTitles ? 114 : 72)  : (showTitles ? 100 : 64)
+        const barH   = isDesktop ? (showTitles ? 14  : 7)   : (showTitles ? 18  : 9)
+        const barTop = isDesktop ? (showTitles ? 32  : 28)  : (showTitles ? 30  : 26)
+        const barGap = isDesktop ? (showTitles ? 16  : 10)  : (showTitles ? 20  : 12)
 
-          return (
-            <div
-              key={dateStr}
-              onClick={() => onSelectDate(dateStr)}
-              className="day-cell-clickable"
-              style={{ height: isDesktop ? 114 : 100, position: 'relative', cursor: 'pointer' }}
-            >
-              <div style={{
-                position: 'absolute', top: 4, left: '50%', transform: 'translateX(-50%)',
-                width: 28, height: 28,
-                borderRadius: isSel ? R.tag : isToday ? '50%' : 'none',
-                border: isToday ? `2px solid ${C.accent}` : isSel ? `2px solid ${C.accentBlue}` : 'none',
-                background: isSel ? C.accentBlue : isToday ? C.accent : 'transparent',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                zIndex: 2,
-                fontWeight: isSel || isToday ? 700 : 400,
-                fontSize: 13,
-                color: isSel || isToday ? '#fff' : dow === 0 ? C.accent : dow === 6 ? C.accentBlue : C.text,
-                fontFamily: isToday || isSel ? "'Noto Sans KR', 'Kalam', cursive" : "'Noto Sans KR', 'Patrick Hand', cursive",
-              }}>{d}</div>
+        return (
+          <div style={{ paddingBottom: 8 }}>
+            {weeks.map((week, wIdx) => {
+              // 이 주의 날짜 문자열 배열 (null = 패딩 칸)
+              const weekDates = week.map((d) => d !== null ? toDateStr(year, month, d) : null)
+              const weekStart = weekDates.find(Boolean)
+              const weekEnd   = [...weekDates].reverse().find(Boolean)
 
-              {slottedEvs.slice(0, MAX_SLOTS).map((ev, slotIdx) => {
-                const isActualStart = dateStr === ev.startDate
-                const isActualEnd = dateStr === ev.endDate
-                const isRowStart = dow === 0
-                const isRowEnd = dow === 6
-                return (
-                  <div key={ev.id} style={{
-                    position: 'absolute',
-                    top: (isDesktop ? 32 : 30) + slotIdx * (isDesktop ? 16 : 20), height: isDesktop ? 14 : 18,
-                    left: isActualStart ? 3 : isRowStart ? 1 : 0,
-                    right: isActualEnd ? 3 : isRowEnd ? 1 : 0,
-                    background: getEventColor(ev),
-                    borderRadius: [
-                      isActualStart ? 3 : 0,
-                      isActualEnd ? 3 : 0,
-                      isActualEnd ? 3 : 0,
-                      isActualStart ? 3 : 0,
-                    ].map(v => v + 'px').join(' '),
-                    zIndex: 1,
-                    overflow: 'hidden',
-                    display: 'flex', alignItems: 'center',
-                    paddingLeft: isActualStart ? 4 : 2,
-                    paddingRight: 2,
-                  }}>
-                    {isActualStart && (
-                      <span style={{
-                        fontSize: isDesktop ? 12 : 11, fontWeight: 700, color: '#fff',
-                        whiteSpace: 'nowrap', overflow: 'hidden',
-                        textOverflow: 'ellipsis', lineHeight: 1,
-                        fontFamily: "'Noto Sans KR', sans-serif",
-                      }}>{ev.title}</span>
-                    )}
+              // 이 주에 걸치는 이벤트의 컬럼 범위 계산
+              const weekEvItems = weekStart && weekEnd
+                ? visibleEvents.map(ev => {
+                    if (ev.startDate > weekEnd || ev.endDate < weekStart) return null
+                    // startCol: 이벤트 시작이 이 주 이전이면 첫 번째 유효 칸
+                    let startCol = weekDates.findIndex(d => d !== null && d >= ev.startDate)
+                    if (startCol === -1) startCol = weekDates.findIndex(d => d !== null)
+                    // endCol: 이벤트 끝이 이 주 이후면 마지막 유효 칸
+                    let endCol = -1
+                    for (let i = 6; i >= 0; i--) {
+                      if (weekDates[i] !== null && weekDates[i] <= ev.endDate) { endCol = i; break }
+                    }
+                    if (endCol === -1) endCol = startCol
+                    return { ev, startCol, endCol }
+                  }).filter(Boolean)
+                : []
+
+              // 슬롯 배정 (겹치지 않게 greedy)
+              const slotted = []
+              for (const item of weekEvItems) {
+                let slot = 0
+                while (slotted.some(s =>
+                  s.slot === slot && s.startCol <= item.endCol && s.endCol >= item.startCol
+                )) slot++
+                slotted.push({ ...item, slot })
+              }
+
+              return (
+                <div key={wIdx} style={{ position: 'relative' }}>
+                  {/* 날짜 숫자 레이어 */}
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)' }}>
+                    {week.map((d, dayIdx) => {
+                      if (d === null) return <div key={`e-${wIdx}-${dayIdx}`} style={{ height: cellH }} />
+                      const dateStr = toDateStr(year, month, d)
+                      const isToday = dateStr === today
+                      const isSel   = dateStr === selectedDate
+                      const dow     = dayIdx // 월요일=0
+                      const overflowCount = slotted.filter(s =>
+                        s.slot >= MAX_SLOTS &&
+                        s.ev.startDate <= dateStr && s.ev.endDate >= dateStr
+                      ).length
+
+                      return (
+                        <div
+                          key={dateStr}
+                          onClick={() => onSelectDate(dateStr)}
+                          className="day-cell-clickable"
+                          style={{ height: cellH, position: 'relative', cursor: 'pointer' }}
+                        >
+                          <div style={{
+                            position: 'absolute', top: 4, left: '50%', transform: 'translateX(-50%)',
+                            width: 28, height: 28,
+                            borderRadius: isSel ? R.tag : isToday ? '50%' : 'none',
+                            border: isToday ? `2px solid ${C.accent}` : isSel ? `2px solid ${C.accentBlue}` : 'none',
+                            background: isSel ? C.accentBlue : isToday ? C.accent : 'transparent',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            zIndex: 2,
+                            fontWeight: isSel || isToday ? 700 : 400,
+                            fontSize: 13,
+                            color: isSel || isToday ? '#fff' : dow === 6 ? C.accent : dow === 5 ? C.accentBlue : C.text,
+                            fontFamily: isToday || isSel ? "'Noto Sans KR', 'Kalam', cursive" : "'Noto Sans KR', 'Patrick Hand', cursive",
+                          }}>{d}</div>
+
+                          {overflowCount > 0 && (
+                            <div style={{ position: 'absolute', bottom: 2, right: 3, fontSize: 9, color: '#888', fontWeight: 700 }}>
+                              +{overflowCount}
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
                   </div>
-                )
-              })}
 
-              {overflowCount > 0 && (
-                <div style={{ position: 'absolute', bottom: 2, right: 3, fontSize: 9, color: '#888', fontWeight: 700 }}>
-                  +{overflowCount}
+                  {/* 이벤트 바 레이어 — absolute, 여러 칸에 걸쳐 표시 */}
+                  <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, pointerEvents: 'none', zIndex: 3 }}>
+                    {slotted.filter(s => s.slot < MAX_SLOTS).map(({ ev, startCol, endCol, slot }) => {
+                      const isActualStart = weekDates[startCol] === ev.startDate
+                      const isActualEnd   = weekDates[endCol]   === ev.endDate
+                      const span = endCol - startCol + 1
+                      return (
+                        <div key={ev.id} style={{
+                          position: 'absolute',
+                          top: barTop + slot * barGap,
+                          height: barH,
+                          left:  `calc(${startCol / 7 * 100}% + ${isActualStart ? 3 : 0}px)`,
+                          width: `calc(${span / 7 * 100}% - ${(isActualStart ? 3 : 0) + (isActualEnd ? 3 : 0)}px)`,
+                          background: getEventColor(ev),
+                          borderRadius: [
+                            isActualStart ? 3 : 0,
+                            isActualEnd   ? 3 : 0,
+                            isActualEnd   ? 3 : 0,
+                            isActualStart ? 3 : 0,
+                          ].map(v => v + 'px').join(' '),
+                          zIndex: 1,
+                          overflow: 'hidden',
+                          display: 'flex', alignItems: 'center',
+                          paddingLeft: isActualStart ? 4 : 2,
+                          paddingRight: 4,
+                        }}>
+                          {showTitles && (
+                            <span style={{
+                              fontSize: isDesktop ? 12 : 11, fontWeight: 700, color: '#fff',
+                              whiteSpace: 'nowrap', overflow: 'hidden',
+                              textOverflow: 'ellipsis', lineHeight: 1,
+                              fontFamily: "'Noto Sans KR', sans-serif",
+                            }}>{ev.title}</span>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
                 </div>
-              )}
-            </div>
-          )
-        })}
-      </div>
+              )
+            })}
+          </div>
+        )
+      })()}
     </div>
   )
 }
