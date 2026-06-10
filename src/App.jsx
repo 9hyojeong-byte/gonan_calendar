@@ -283,6 +283,8 @@ const TRAVEL_EMOJIS = ['🪵','🦇','🦉','🌼','🍐','🌈','🐻','🐦','
 
 function Spinner({ fullPage }) {
   const emoji = TRAVEL_EMOJIS[Math.floor(Math.random() * TRAVEL_EMOJIS.length)]
+  const LOADING_MSGS = ['고난크루와 함께! 이번엔 어디로 갈까?', '벙주사랑🥰 고난사랑💞']
+  const loadingMsg = LOADING_MSGS[Math.floor(Math.random() * LOADING_MSGS.length)]
   const inner = (
     <div style={{ textAlign: 'center', padding: 40 }}>
       <style>{`
@@ -305,7 +307,7 @@ function Spinner({ fullPage }) {
         }}>{emoji}</span>
       </div>
       <p style={{ fontSize: 15, color: '#888', fontFamily: "'Noto Sans KR', sans-serif", margin: 0 }}>
-        고난크루와 함께! 이번엔 어디로 갈까?
+        {loadingMsg}
       </p>
     </div>
   )
@@ -957,7 +959,7 @@ function EventForm({ initialDate, editEvent, onSave, onCancel, submitting }) {
         <FormField label="👤 리딩 (주최자)" error={errors.leader}>
           <input type="text" value={leader}
             onChange={e => { setLeader(e.target.value); setErrors(v => ({ ...v, leader: null })) }}
-            placeholder="예) 최술사" style={inputCss(errors.leader)} />
+            placeholder="예) 김벙주" style={inputCss(errors.leader)} />
         </FormField>
 
         <FormField label="🗺️ 여행 제목" error={errors.title}>
@@ -974,7 +976,7 @@ function EventForm({ initialDate, editEvent, onSave, onCancel, submitting }) {
 
         <FormField label="🧑‍🤝‍🧑 참석자" hint="나중에 누구든 자유롭게 수정할 수 있어요.">
           <textarea value={participants} onChange={e => setParticipants(e.target.value)}
-            placeholder={"참석자 이름을 적어주세요\n예) 최술사, 이고고, 박여행"}
+            placeholder={"참석자 이름을 적어주세요\n예) 김벙주, 이고고, 박여행"}
             rows={3} style={{ ...inputCss(false), resize: 'vertical', lineHeight: 1.7 }} />
         </FormField>
 
