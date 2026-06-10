@@ -399,7 +399,7 @@ function Calendar({ year, month, events, selectedDate, onSelectDate, onMonthChan
       {/* 날짜 그리드 */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', paddingBottom: 8 }}>
         {cells.map((d, idx) => {
-          if (d === null) return <div key={`e-${idx}`} style={{ height: isDesktop ? 70 : 62 }} />
+          if (d === null) return <div key={`e-${idx}`} style={{ height: isDesktop ? 91 : 80 }} />
           const dateStr = toDateStr(year, month, d)
           const slottedEvs = visibleEvents.filter(ev => eventCoversDate(ev, dateStr))
           const hasEvents = slottedEvs.length > 0
@@ -413,7 +413,7 @@ function Calendar({ year, month, events, selectedDate, onSelectDate, onMonthChan
               key={dateStr}
               onClick={() => onSelectDate(dateStr)}
               className="day-cell-clickable"
-              style={{ height: isDesktop ? 88 : 80, position: 'relative', cursor: 'pointer' }}
+              style={{ height: isDesktop ? 114 : 100, position: 'relative', cursor: 'pointer' }}
             >
               <div style={{
                 position: 'absolute', top: 4, left: '50%', transform: 'translateX(-50%)',
@@ -437,7 +437,7 @@ function Calendar({ year, month, events, selectedDate, onSelectDate, onMonthChan
                 return (
                   <div key={ev.id} style={{
                     position: 'absolute',
-                    top: 32 + slotIdx * 16, height: 14,
+                    top: (isDesktop ? 32 : 30) + slotIdx * (isDesktop ? 16 : 20), height: isDesktop ? 14 : 18,
                     left: isActualStart ? 3 : isRowStart ? 1 : 0,
                     right: isActualEnd ? 3 : isRowEnd ? 1 : 0,
                     background: getEventColor(ev),
@@ -455,7 +455,7 @@ function Calendar({ year, month, events, selectedDate, onSelectDate, onMonthChan
                   }}>
                     {isActualStart && (
                       <span style={{
-                        fontSize: 12, fontWeight: 700, color: '#fff',
+                        fontSize: isDesktop ? 12 : 11, fontWeight: 700, color: '#fff',
                         whiteSpace: 'nowrap', overflow: 'hidden',
                         textOverflow: 'ellipsis', lineHeight: 1,
                         fontFamily: "'Noto Sans KR', sans-serif",
