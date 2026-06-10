@@ -321,7 +321,7 @@ function Spinner({ fullPage }) {
 }
 
 // ── 캘린더 ───────────────────────────────────────────────────
-function Calendar({ year, month, events, selectedDate, onSelectDate, onMonthChange, isDesktop }) {
+function Calendar({ year, month, events, selectedDate, onSelectDate, onMonthChange, onMonthClick, isDesktop }) {
   const today = todayStr()
   const firstDay = new Date(year, month, 1).getDay()
   const daysInMonth = new Date(year, month + 1, 0).getDate()
@@ -366,10 +366,11 @@ function Calendar({ year, month, events, selectedDate, onSelectDate, onMonthChan
           fontSize: 18, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}>‹</button>
 
-        <div style={{ textAlign: 'center' }}>
+        <div style={{ textAlign: 'center', cursor: 'pointer' }} onClick={onMonthClick}>
           <h2 style={{
             fontSize: 22, fontWeight: 700, color: C.text,
             display: 'inline-block', transform: 'rotate(-0.5deg)',
+            textDecoration: 'underline dotted', textUnderlineOffset: 4,
           }}>
             {month + 1}월
           </h2>
@@ -465,18 +466,25 @@ function Calendar({ year, month, events, selectedDate, onSelectDate, onMonthChan
 }
 
 // ── 일정 목록 ────────────────────────────────────────────────
-function EventList({ date, events, onSelect, onAdd }) {
+function EventList({ date, year, month, events, onSelect, onAdd }) {
+  // 날짜 선택 없으면 해당 월 전체 일정 표시
+  const isMonthView = !date
+  const monthStart = isMonthView ? toDateStr(year, month, 1) : null
+  const monthEnd   = isMonthView ? toDateStr(year, month, new Date(year, month + 1, 0).getDate()) : null
+
   const filtered = events
-    .filter(ev => eventCoversDate(ev, date))
+    .filter(ev => isMonthView
+      ? ev.startDate <= monthEnd && ev.endDate >= monthStart
+      : eventCoversDate(ev, date))
     .sort((a, b) => a.startDate < b.startDate ? -1 : 1)
 
-  if (!date || filtered.length === 0) return (
+  if (filtered.length === 0) return (
     <div style={{ textAlign: 'center', padding: '48px 24px' }}>
       <div style={{ fontSize: 48, marginBottom: 12, animation: 'bounce-gentle 3s ease-in-out infinite' }}>🗺️</div>
       <p style={{ fontWeight: 700, fontSize: 16, color: '#555', fontFamily: "'Noto Sans KR', 'Kalam', cursive" }}>
-        {date ? '이 날엔 일정이 없어요!' : '날짜를 눌러보세요 👆'}
+        {isMonthView ? '이 달엔 일정이 없어요!' : '이 날엔 일정이 없어요!'}
       </p>
-      {!date && <p style={{ fontSize: 13, color: '#888' }}>+ 버튼으로 새 여행을 기록하세요</p>}
+      {isMonthView && <p style={{ fontSize: 13, color: '#888' }}>+ 버튼으로 새 여행을 기록하세요</p>}
       {date && onAdd && (
         <button onClick={onAdd} className="btn-sketch-blue" style={{
           marginTop: 16, padding: '10px 24px', fontSize: 14, fontWeight: 700,
@@ -485,20 +493,22 @@ function EventList({ date, events, onSelect, onAdd }) {
     </div>
   )
 
-  const { m, d, dowKr } = formatDate(date)
+  const labelText = isMonthView
+    ? `${year}년 ${month + 1}월`
+    : (() => { const { m, d, dowKr } = formatDate(date); return `${m}월 ${d}일 (${dowKr})` })()
 
   return (
     <div style={{ padding: '16px 16px 32px' }}>
-      {/* 날짜 라벨 */}
+      {/* 날짜/월 라벨 */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
         <div style={{
-          background: C.accent, color: '#fff',
+          background: isMonthView ? C.accentBlue : C.accent, color: '#fff',
           border: `2px solid ${C.border}`, borderRadius: R.tag,
           boxShadow: S.small,
           padding: '4px 12px', fontSize: 13, fontWeight: 700,
           fontFamily: "'Noto Sans KR', 'Kalam', cursive",
           transform: 'rotate(-1deg)',
-        }}>{m}월 {d}일 ({dowKr})</div>
+        }}>{labelText}</div>
         <span style={{ fontSize: 12, color: '#888' }}>✏️ {filtered.length}개</span>
       </div>
 
@@ -534,6 +544,21 @@ function EventList({ date, events, onSelect, onAdd }) {
 
               <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginTop: 2 }}>
                 <div style={{ flex: 1 }}>
+                  {/* 날짜 — 첫 줄, 눈에 띄게 */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+                    <span style={{
+                      background: color, color: '#fff',
+                      border: `2px solid ${C.border}`, borderRadius: R.tag,
+                      padding: '2px 8px', fontSize: 12, fontWeight: 800,
+                      boxShadow: '2px 2px 0px #2d2d2d', letterSpacing: 0.3,
+                    }}>📅 {fmtRange(ev)}</span>
+                    {nights > 0 && (
+                      <span style={{
+                        background: C.white, border: `1px solid ${C.border}`,
+                        borderRadius: R.tag, padding: '2px 7px', fontSize: 11, fontWeight: 700,
+                      }}>{nights}박 {nights + 1}일</span>
+                    )}
+                  </div>
                   {ev.leader && (
                     <div style={{ fontSize: 11, color: C.accentBlue, fontWeight: 700, marginBottom: 3 }}>
                       👤 {ev.leader}
@@ -543,16 +568,6 @@ function EventList({ date, events, onSelect, onAdd }) {
                     fontFamily: "'Noto Sans KR', 'Kalam', cursive", fontWeight: 700,
                     fontSize: 15, color: C.text, marginBottom: 4,
                   }}>✈️ {ev.title}</div>
-                  <div style={{ fontSize: 12, color: '#555', lineHeight: 1.5 }}>
-                    📅 {fmtRange(ev)}
-                    {nights > 0 && (
-                      <span style={{
-                        marginLeft: 6,
-                        background: C.white, border: `1px solid ${C.border}`,
-                        borderRadius: R.tag, padding: '1px 6px', fontSize: 11, fontWeight: 700,
-                      }}>{nights}박 {nights + 1}일</span>
-                    )}
-                  </div>
                   {ev.content && (
                     <div style={{
                       marginTop: 5, fontSize: 12, color: '#666', lineHeight: 1.5,
@@ -1160,10 +1175,11 @@ export default function App() {
                   selectedDate={selectedDate}
                   onSelectDate={handleSelectDate}
                   onMonthChange={handleMonthChange}
+                  onMonthClick={() => setSelectedDate(null)}
                   isDesktop={false}
                 />
                 <div style={{ marginTop: 8 }}>
-                  <EventList date={selectedDate} events={events} onSelect={handleSelectEvent} onAdd={selectedDate ? handleAddFromDate : null} />
+                  <EventList date={selectedDate} year={year} month={month} events={events} onSelect={handleSelectEvent} onAdd={selectedDate ? handleAddFromDate : null} />
                 </div>
               </>
             )}
@@ -1178,6 +1194,7 @@ export default function App() {
                   selectedDate={selectedDate}
                   onSelectDate={handleSelectDate}
                   onMonthChange={handleMonthChange}
+                  onMonthClick={() => setSelectedDate(null)}
                   isDesktop={true}
                 />
                 <div style={{
@@ -1195,10 +1212,10 @@ export default function App() {
                         const { m, d, dowKr } = formatDate(selectedDate)
                         const cnt = events.filter(ev => eventCoversDate(ev, selectedDate)).length
                         return `📋 ${m}월 ${d}일 (${dowKr}) · ${cnt}개`
-                      })() : '📋 날짜를 클릭하세요'}
+                      })() : `📋 ${year}년 ${month + 1}월 전체`}
                     </h3>
                   </div>
-                  <EventList date={selectedDate} events={events} onSelect={handleSelectEvent} onAdd={selectedDate ? handleAddFromDate : null} />
+                  <EventList date={selectedDate} year={year} month={month} events={events} onSelect={handleSelectEvent} onAdd={selectedDate ? handleAddFromDate : null} />
                 </div>
               </div>
             )}
