@@ -32,43 +32,28 @@ const S = {
 // ── PWA ──────────────────────────────────────────────────────
 function useInstallPrompt() {
   const [prompt, setPrompt] = useState(null)
-  const [dismissed, setDismissed] = useState(
-    () => localStorage.getItem('pwa_install_dismissed') === '1'
-  )
   const isInstalled = window.matchMedia('(display-mode: standalone)').matches
     || window.navigator.standalone === true
-  // 렌더 시점에 즉시 감지
   const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream
-  const isMobile = isIOS || /android/i.test(navigator.userAgent)
 
   useEffect(() => {
-    if (isInstalled || dismissed) return
-    const handler = (e) => {
-      e.preventDefault()
-      // 네이티브 설치 다이얼로그 즉시 표시
-      e.prompt()
-      e.userChoice.then(({ outcome }) => {
-        if (outcome === 'accepted') dismiss()
-      })
-    }
+    if (isInstalled) return
+    const handler = (e) => { e.preventDefault(); setPrompt(e) }
     window.addEventListener('beforeinstallprompt', handler)
     return () => window.removeEventListener('beforeinstallprompt', handler)
-  }, [isInstalled, dismissed])
+  }, [isInstalled])
 
   const install = async () => {
+    if (isIOS) return // iOS는 버튼 안 보임
     if (!prompt) return
     prompt.prompt()
     const { outcome } = await prompt.userChoice
-    if (outcome === 'accepted') dismiss()
-    else setPrompt(null)
+    if (outcome !== 'accepted') setPrompt(null)
   }
-  const dismiss = () => {
-    localStorage.setItem('pwa_install_dismissed', '1')
-    setDismissed(true); setPrompt(null)
-  }
-  // 모바일이면 prompt 이벤트 없어도 바로 표시 (iOS 포함)
-  const show = !isInstalled && !dismissed && isMobile
-  return { show, isIOS, install: prompt ? install : null, dismiss }
+
+  // 설치 버튼 표시 조건: 앱으로 실행 중이 아닐 때 + (prompt 있거나 iOS)
+  const canInstall = !isInstalled && (prompt !== null || isIOS)
+  return { canInstall, isIOS, install }
 }
 
 function InstallBanner({ isIOS, onInstall, onDismiss }) {
@@ -359,22 +344,9 @@ function AdminModal({ onClose }) {
 }
 
 // ── 헤더 ─────────────────────────────────────────────────────
-function Header({ view, onBack, onSync, syncing, isDesktop }) {
+function Header({ view, onBack, isDesktop, canInstall, onInstall }) {
   const isCalendar = view === VIEW.CALENDAR
-  const tapCount = useRef(0)
-  const tapTimer = useRef(null)
   const [showAdmin, setShowAdmin] = useState(false)
-
-  function handleSecretTap() {
-    tapCount.current += 1
-    clearTimeout(tapTimer.current)
-    if (tapCount.current >= 10) {
-      tapCount.current = 0
-      setShowAdmin(true)
-      return
-    }
-    tapTimer.current = setTimeout(() => { tapCount.current = 0 }, 2000)
-  }
 
   return (
     <>
@@ -388,24 +360,29 @@ function Header({ view, onBack, onSync, syncing, isDesktop }) {
           position: 'relative', display: 'flex', alignItems: 'center',
           maxWidth: isDesktop ? 1200 : '100%', margin: '0 auto',
         }}>
-          {/* 뒤로가기 + 히든 탭 영역 */}
-          <div style={{ position: 'relative', flexShrink: 0 }}>
-            <div onClick={handleSecretTap} style={{
-              position: 'absolute', top: -10, left: -10,
-              width: 48, height: 48, zIndex: 1,
-            }} />
-            <button onClick={onBack} style={{
-              width: 38, height: 38,
-              borderRadius: R.wobblyMd,
-              border: onBack ? `3px solid ${C.border}` : 'none',
-              background: onBack ? C.muted : 'transparent',
-              boxShadow: onBack ? S.small : 'none',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 18, fontWeight: 700,
-              opacity: onBack ? 1 : 0, pointerEvents: onBack ? 'auto' : 'none',
-              flexShrink: 0, transition: 'transform 0.1s',
-              position: 'relative', zIndex: 2,
-            }} className={onBack ? 'btn-muted' : ''}>←</button>
+          {/* 좌측: 뒤로가기 or 설치 버튼 */}
+          <div style={{ flexShrink: 0 }}>
+            {onBack ? (
+              <button onClick={onBack} style={{
+                width: 38, height: 38,
+                borderRadius: R.wobblyMd,
+                border: `3px solid ${C.border}`,
+                background: C.muted, boxShadow: S.small,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 18, fontWeight: 700,
+              }} className="btn-muted">←</button>
+            ) : canInstall ? (
+              <button onClick={onInstall} title="홈 화면에 추가" style={{
+                width: 38, height: 38,
+                borderRadius: R.wobblyMd,
+                border: `3px solid ${C.border}`,
+                background: C.muted, boxShadow: S.small,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 18,
+              }} className="btn-muted">⬇️</button>
+            ) : (
+              <div style={{ width: 38, height: 38 }} />
+            )}
           </div>
 
           {/* 타이틀 — 절대 가운데 고정 */}
@@ -1058,7 +1035,7 @@ export default function App() {
   }
 
   const isDesktop = useIsDesktop()
-  const { show: showInstall, isIOS, install, dismiss: dismissInstall } = useInstallPrompt()
+  const { canInstall, install } = useInstallPrompt()
 
   const onBack = view === VIEW.DETAIL ? () => setView(VIEW.CALENDAR) : null
 
@@ -1073,7 +1050,7 @@ export default function App() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100svh' }}>
-      <Header view={view} onBack={onBack} onSync={handleSync} syncing={syncing} isDesktop={isDesktop} />
+      <Header view={view} onBack={onBack} isDesktop={isDesktop} canInstall={canInstall} onInstall={install} />
 
       <div style={{ flex: 1, overflowY: 'auto', paddingTop: isDesktop ? 64 : 60 }}>
         {loading ? (
@@ -1148,9 +1125,6 @@ export default function App() {
       </div>
 
       {toast && <Toast msg={toast} />}
-      {showInstall && (
-        <InstallBanner isIOS={isIOS} onInstall={install} onDismiss={dismissInstall} />
-      )}
     </div>
   )
 }
