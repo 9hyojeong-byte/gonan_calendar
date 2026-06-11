@@ -134,7 +134,7 @@ function jsonpCall(params, timeoutMs = 15000) {
 }
 
 const gasGet  = ()     => jsonpCall({ action: 'list' })
-const gasPost = (body) => jsonpCall(body)
+const gasSync = ()     => jsonpCall({ action: 'sync' })
 
 // ── 유틸 ─────────────────────────────────────────────────────
 const PALETTE = [
@@ -193,14 +193,14 @@ function linkify(text) {
   )
 }
 
-const VIEW = { CALENDAR: 'calendar', DETAIL: 'detail', FORM: 'form' }
+const VIEW = { CALENDAR: 'calendar', DETAIL: 'detail' }
 const DAYS_KR = ['월', '화', '수', '목', '금', '토', '일']
 const MAX_SLOTS = 3
 
 const SHEET_URL = 'https://docs.google.com/spreadsheets/d/1I-j29J_sau7mJpjfmXrsyvtK2Xe-NqGByOyW3YNzpNI/edit?gid=2140106036#gid=2140106036'
 
 // ── 헤더 ─────────────────────────────────────────────────────
-function Header({ view, onBack, onAdd, isDesktop }) {
+function Header({ view, onBack, onSync, syncing, isDesktop }) {
   const isCalendar = view === VIEW.CALENDAR
   const tapCount = useRef(0)
   const tapTimer = useRef(null)
@@ -233,45 +233,53 @@ function Header({ view, onBack, onAdd, isDesktop }) {
             position: 'absolute', top: -10, left: -10,
             width: 48, height: 48, zIndex: 1,
           }} />
-        <button onClick={onBack} style={{
-          width: 38, height: 38,
-          borderRadius: R.wobblyMd,
-          border: onBack ? `3px solid ${C.border}` : 'none',
-          background: onBack ? C.muted : 'transparent',
-          boxShadow: onBack ? S.small : 'none',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 18, fontWeight: 700,
-          opacity: onBack ? 1 : 0, pointerEvents: onBack ? 'auto' : 'none',
-          flexShrink: 0, transition: 'transform 0.1s',
-          position: 'relative', zIndex: 2,
-        }} className={onBack ? 'btn-muted' : ''}>←</button>
+          <button onClick={onBack} style={{
+            width: 38, height: 38,
+            borderRadius: R.wobblyMd,
+            border: onBack ? `3px solid ${C.border}` : 'none',
+            background: onBack ? C.muted : 'transparent',
+            boxShadow: onBack ? S.small : 'none',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 18, fontWeight: 700,
+            opacity: onBack ? 1 : 0, pointerEvents: onBack ? 'auto' : 'none',
+            flexShrink: 0, transition: 'transform 0.1s',
+            position: 'relative', zIndex: 2,
+          }} className={onBack ? 'btn-muted' : ''}>←</button>
         </div>
 
         {/* 타이틀 */}
         <div style={{ textAlign: 'center' }}>
           {isCalendar ? (
-            <>
-              <h1 style={{
-                fontSize: isDesktop ? 24 : 20, fontWeight: 700,
-                color: C.text, lineHeight: 1,
-                transform: 'rotate(-1deg)', display: 'inline-block',
-              }}>📆고난 캘린더🌄</h1>
-            </>
+            <h1 style={{
+              fontSize: isDesktop ? 24 : 20, fontWeight: 700,
+              color: C.text, lineHeight: 1,
+              transform: 'rotate(-1deg)', display: 'inline-block',
+            }}>📆고난 캘린더🌄</h1>
           ) : (
             <h2 style={{ fontSize: isDesktop ? 20 : 17, fontWeight: 700, color: C.text }}>
-              {view === VIEW.DETAIL ? '여행 상세 📋' : '일정 등록 ✍️'}
+              여행 상세 📋
             </h2>
           )}
         </div>
 
-        {/* 등록 버튼 */}
-        <button onClick={onAdd} className="btn-sketch" style={{
-          padding: isDesktop ? '8px 16px' : '7px 12px',
-          fontSize: isDesktop ? 14 : 13, fontWeight: 700,
-          opacity: onAdd ? 1 : 0, pointerEvents: onAdd ? 'auto' : 'none',
-          flexShrink: 0,
-        }}>
-          {isDesktop ? '+ 새 여행' : '+'}
+        {/* 새로 불러오기 버튼 */}
+        <button
+          onClick={onSync}
+          disabled={syncing}
+          className="btn-sketch"
+          title="소모임에서 새 일정 불러오기"
+          style={{
+            padding: isDesktop ? '8px 14px' : '7px 10px',
+            fontSize: isDesktop ? 13 : 12, fontWeight: 700,
+            flexShrink: 0, opacity: syncing ? 0.6 : 1,
+            display: 'flex', alignItems: 'center', gap: 4,
+          }}
+        >
+          <span style={{
+            display: 'inline-block',
+            animation: syncing ? '_spin 1s linear infinite' : 'none',
+          }}>🔄</span>
+          {isDesktop && (syncing ? '불러오는 중...' : '새로 불러오기')}
         </button>
       </div>
     </div>
@@ -602,7 +610,7 @@ function Calendar({ year, month, events, selectedDate, onSelectDate, onMonthChan
 }
 
 // ── 일정 목록 ────────────────────────────────────────────────
-function EventList({ date, year, month, events, onSelect, onAdd }) {
+function EventList({ date, year, month, events, onSelect }) {
   // 날짜 선택 없으면 해당 월 전체 일정 표시
   const isMonthView = !date
   const monthStart = isMonthView ? toDateStr(year, month, 1) : null
@@ -620,12 +628,7 @@ function EventList({ date, year, month, events, onSelect, onAdd }) {
       <p style={{ fontWeight: 700, fontSize: 16, color: '#555', fontFamily: "'Noto Sans KR', 'Kalam', cursive" }}>
         {isMonthView ? '이 달엔 일정이 없어요!' : '이 날엔 일정이 없어요!'}
       </p>
-      {isMonthView && <p style={{ fontSize: 13, color: '#888' }}>+ 버튼으로 새 여행을 기록하세요</p>}
-      {date && onAdd && (
-        <button onClick={onAdd} className="btn-sketch-blue" style={{
-          marginTop: 16, padding: '10px 24px', fontSize: 14, fontWeight: 700,
-        }}>+ 일정 등록하기</button>
-      )}
+      {isMonthView && <p style={{ fontSize: 13, color: '#888' }}>🔄 새로 불러오기 버튼으로 최신 일정을 가져와보세요</p>}
     </div>
   )
 
@@ -718,26 +721,14 @@ function EventList({ date, year, month, events, onSelect, onAdd }) {
           )
         })}
       </div>
-      {onAdd && (
-        <button onClick={onAdd} className="btn-sketch-blue" style={{
-          marginTop: 20, width: '100%', padding: '11px 0', fontSize: 14, fontWeight: 700,
-        }}>+ 일정 등록하기</button>
-      )}
     </div>
   )
 }
 
 // ── 일정 상세 ────────────────────────────────────────────────
-function EventDetail({ event, onEdit, onDelete, onUpdateParticipants, updatingParticipants }) {
+function EventDetail({ event }) {
   const nights = dayDiff(event.startDate, event.endDate)
   const color = getEventColor(event)
-  const [editingParticipants, setEditingParticipants] = useState(false)
-  const [participantsVal, setParticipantsVal] = useState(event.participants || '')
-
-  function handleSaveParticipants() {
-    onUpdateParticipants(participantsVal.trim())
-    setEditingParticipants(false)
-  }
 
   return (
     <div style={{ flex: 1, padding: '20px 16px 100px' }}>
@@ -780,12 +771,9 @@ function EventDetail({ event, onEdit, onDelete, onUpdateParticipants, updatingPa
           {nights > 0 && <span style={{ fontWeight: 700, color: C.accentBlue }}>· {nights}박 {nights + 1}일</span>}
         </div>
 
-        <h2 style={{ fontSize: 24, fontWeight: 700, color: C.text, lineHeight: 1.3, marginBottom: 8 }}>
+        <h2 style={{ fontSize: 24, fontWeight: 700, color: C.text, lineHeight: 1.3, marginBottom: 0 }}>
           ✈️ {event.title}
         </h2>
-        <p style={{ fontSize: 12, color: '#888', margin: 0 }}>
-          등록: {new Date(event.createdAt).toLocaleDateString('ko-KR')}
-        </p>
       </div>
 
       {/* 내용 카드 */}
@@ -800,13 +788,13 @@ function EventDetail({ event, onEdit, onDelete, onUpdateParticipants, updatingPa
           textTransform: 'uppercase', letterSpacing: '0.1em',
           marginBottom: 10, fontFamily: "'Noto Sans KR', 'Kalam', cursive",
           borderBottom: `2px dashed ${C.muted}`, paddingBottom: 6,
-        }}>📝 여행 내용</div>
+        }}>📝 상세 정보</div>
         <p style={{
           fontSize: 15, color: event.content ? C.text : '#aaa',
           lineHeight: 1.8, whiteSpace: 'pre-wrap', wordBreak: 'break-word',
-          minHeight: 80, margin: '0 0 16px', fontStyle: event.content ? 'normal' : 'italic',
+          margin: '0 0 16px', fontStyle: event.content ? 'normal' : 'italic',
         }}>
-          {event.content ? linkify(event.content) : '내용이 없어요. 메모를 남겨보세요 :)'}
+          {event.content || '상세 정보가 없어요.'}
         </p>
         <a
           href="https://www.somoim.co.kr/ee346172-8bf3-11ec-88c3-0ada976e8c451"
@@ -824,335 +812,14 @@ function EventDetail({ event, onEdit, onDelete, onUpdateParticipants, updatingPa
           onMouseEnter={e => { e.currentTarget.style.transform = 'translate(2px,2px)'; e.currentTarget.style.boxShadow = S.small }}
           onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = S.base }}
         >
-          🔗 소모임 바로가기
+          🔗 소모임에서 참석 신청하기
         </a>
-      </div>
-
-      {/* 수정/삭제 버튼 */}
-      <div style={{ display: 'flex', gap: 12, marginBottom: 16 }}>
-        <button onClick={onEdit} className="btn-sketch-blue" style={{
-          flex: 1, padding: '13px', fontSize: 14, fontWeight: 700,
-        }}>✏️ 수정</button>
-        <button onClick={onDelete} className="btn-danger-sketch" style={{
-          flex: 1, padding: '13px', fontSize: 14, fontWeight: 700,
-        }}>🗑️ 삭제</button>
-      </div>
-
-      {/* 참석자 카드 — 비밀번호 없이 누구나 수정 */}
-      <div style={{
-        background: C.white, border: `3px solid ${C.border}`,
-        borderRadius: R.wobblyMd, boxShadow: S.base,
-        padding: '16px 18px',
-        transform: 'rotate(-0.3deg)',
-      }}>
-        <div style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          borderBottom: `2px dashed ${C.muted}`, paddingBottom: 8, marginBottom: 12,
-        }}>
-          <div style={{
-            fontSize: 11, fontWeight: 700, color: C.accentBlue,
-            textTransform: 'uppercase', letterSpacing: '0.1em',
-            fontFamily: "'Noto Sans KR', 'Kalam', cursive",
-          }}>🧑‍🤝‍🧑 참석자</div>
-          {!editingParticipants && (
-            <button
-              onClick={() => { setParticipantsVal(event.participants || ''); setEditingParticipants(true) }}
-              style={{
-                fontSize: 11, color: C.accentBlue, fontWeight: 700,
-                border: `2px solid ${C.accentBlue}`, borderRadius: R.tag,
-                padding: '2px 8px', background: 'transparent',
-                transition: 'background 0.1s, color 0.1s',
-              }}
-              onMouseEnter={e => { e.currentTarget.style.background = C.accentBlue; e.currentTarget.style.color = '#fff' }}
-              onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = C.accentBlue }}
-            >✏️ 수정</button>
-          )}
-        </div>
-
-        {editingParticipants ? (
-          <div>
-            <textarea
-              autoFocus
-              value={participantsVal}
-              onChange={e => setParticipantsVal(e.target.value)}
-              placeholder="참석자 이름을 자유롭게 적어주세요 (예: 최술사, 이고고, 박여행)"
-              rows={3}
-              style={{ ...inputCss(false), resize: 'vertical', lineHeight: 1.6, fontSize: 14 }}
-            />
-            <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
-              <button
-                onClick={() => setEditingParticipants(false)}
-                className="btn-muted"
-                style={{ flex: 1, padding: '10px', fontSize: 13, fontWeight: 700 }}
-              >취소</button>
-              <button
-                onClick={handleSaveParticipants}
-                disabled={updatingParticipants}
-                className="btn-sketch"
-                style={{ flex: 2, padding: '10px', fontSize: 13, fontWeight: 700, opacity: updatingParticipants ? 0.7 : 1 }}
-              >{updatingParticipants ? '저장 중...' : '✅ 저장'}</button>
-            </div>
-          </div>
-        ) : (
-          <p style={{
-            fontSize: 14, color: event.participants ? C.text : '#aaa',
-            lineHeight: 1.8, margin: 0,
-            fontStyle: event.participants ? 'normal' : 'italic',
-            whiteSpace: 'pre-wrap',
-          }}>
-            {event.participants || '아직 참석자가 없어요. 수정 버튼으로 추가해보세요!'}
-          </p>
-        )}
       </div>
     </div>
   )
 }
 
 // ── 비밀번호 모달 ─────────────────────────────────────────────
-function PwModal({ title, onConfirm, onCancel, loading }) {
-  const [pw, setPw] = useState('')
-  const [err, setErr] = useState('')
-
-  function handleSubmit(e) {
-    e.preventDefault()
-    if (!pw.trim()) { setErr('비밀번호를 입력해주세요!'); return }
-    onConfirm(pw.trim())
-  }
-
-  return (
-    <div
-      style={{
-        position: 'fixed', inset: 0, background: 'rgba(45,45,45,0.4)',
-        display: 'flex', alignItems: 'flex-end', zIndex: 100,
-      }}
-      onClick={e => e.target === e.currentTarget && onCancel()}
-    >
-      <div style={{
-        width: '100%', maxWidth: 480, margin: '0 auto',
-        background: C.bg, borderTop: `3px solid ${C.border}`,
-        borderRadius: '24px 24px 0 0',
-        padding: '8px 24px 40px',
-        boxShadow: '0 -4px 0px 0px #2d2d2d',
-      }}>
-        <div style={{ width: 40, height: 4, background: C.muted, borderRadius: 2, margin: '14px auto 20px' }} />
-        <h3 style={{ fontSize: 20, fontWeight: 700, marginBottom: 6, color: C.text }}>{title}</h3>
-        <p style={{ fontSize: 13, color: '#777', marginBottom: 18, marginTop: 0 }}>🔒 등록 시 설정한 비밀번호를 입력하세요.</p>
-        <form onSubmit={handleSubmit}>
-          <input
-            type="password" autoFocus value={pw}
-            onChange={e => { setPw(e.target.value); setErr('') }}
-            placeholder="비밀번호를 적어주세요..."
-            disabled={loading}
-            style={{
-              width: '100%', padding: '14px 16px', fontSize: 15,
-              border: `3px solid ${err ? C.accent : C.border}`,
-              borderRadius: R.wobblyMd, background: C.white,
-              boxShadow: err ? S.small : 'none',
-              marginBottom: 6, boxSizing: 'border-box', outline: 'none',
-            }}
-          />
-          {err && <p style={{ color: C.accent, fontSize: 12, margin: '0 0 10px', fontStyle: 'italic' }}>{err}</p>}
-          <div style={{ display: 'flex', gap: 10, marginTop: 14 }}>
-            <button type="button" onClick={onCancel} disabled={loading} className="btn-muted" style={{
-              flex: 1, padding: 14, fontSize: 15, fontWeight: 700, opacity: loading ? 0.5 : 1,
-            }}>취소</button>
-            <button type="submit" disabled={loading} className="btn-sketch" style={{
-              flex: 2, padding: 14, fontSize: 15, fontWeight: 700, opacity: loading ? 0.7 : 1,
-            }}>{loading ? '처리 중... ✏️' : '확인 ✓'}</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  )
-}
-
-// ── 폼 필드 ───────────────────────────────────────────────────
-function FormField({ label, error, hint, children }) {
-  return (
-    <div style={{ marginBottom: 20 }}>
-      <label style={{
-        display: 'block', fontSize: 13, fontWeight: 700,
-        color: C.accentBlue, marginBottom: 7,
-        fontFamily: "'Noto Sans KR', 'Kalam', cursive",
-      }}>{label}</label>
-      {children}
-      {hint && <p style={{ fontSize: 12, color: '#888', marginTop: 5, margin: '5px 0 0', fontStyle: 'italic' }}>{hint}</p>}
-      {error && <p style={{ color: C.accent, fontSize: 12, marginTop: 5, margin: '5px 0 0', fontStyle: 'italic' }}>{error}</p>}
-    </div>
-  )
-}
-
-function inputCss(hasErr) {
-  return {
-    width: '100%', padding: '13px 15px', fontSize: 15,
-    border: `3px solid ${hasErr ? C.accent : C.border}`,
-    borderRadius: R.wobblyMd,
-    background: C.white,
-    boxSizing: 'border-box', color: C.text,
-    outline: 'none',
-    boxShadow: hasErr ? S.small : 'none',
-    transition: 'border-color 0.15s, box-shadow 0.15s',
-  }
-}
-
-// ── 등록/수정 폼 ──────────────────────────────────────────────
-function addOneDay(dateStr) {
-  const d = new Date(dateStr + 'T00:00:00')
-  d.setDate(d.getDate() + 1)
-  return toDateStr(d.getFullYear(), d.getMonth(), d.getDate())
-}
-
-function EventForm({ initialDate, editEvent, onSave, onCancel, submitting }) {
-  const defaultStart = editEvent?.startDate || initialDate || todayStr()
-  const defaultEnd   = editEvent?.endDate   || (initialDate ? addOneDay(initialDate) : todayStr())
-  const [startDate, setStartDate] = useState(defaultStart)
-  const [endDate, setEndDate] = useState(defaultEnd)
-  const [leader, setLeader] = useState(editEvent?.leader || '')
-  const [title, setTitle] = useState(editEvent?.title || '')
-  const [content, setContent] = useState(editEvent?.content || '')
-  const [participants, setParticipants] = useState(editEvent?.participants || '')
-  const [pw, setPw] = useState('')
-  const [errors, setErrors] = useState({})
-
-  function handleStartDate(val) {
-    setStartDate(val)
-    if (val > endDate) setEndDate(val)
-    setErrors(v => ({ ...v, startDate: null }))
-  }
-
-  function validate() {
-    const e = {}
-    if (!leader.trim()) e.leader = '리딩(주최자)을 입력해주세요!'
-    if (!title.trim()) e.title = '여행 제목을 써주세요!'
-    if (!startDate) e.startDate = '시작 날짜를 골라주세요.'
-    if (!endDate) e.endDate = '종료 날짜를 골라주세요.'
-    if (endDate < startDate) e.endDate = '종료 날짜가 시작 날짜보다 빨라요!'
-    if (!editEvent && !pw.trim()) e.pw = '비밀번호를 설정해주세요.'
-    return e
-  }
-
-  function handleSubmit(e) {
-    e.preventDefault()
-    const errs = validate()
-    if (Object.keys(errs).length > 0) { setErrors(errs); return }
-    if (editEvent) {
-      onSave({ ...editEvent, startDate, endDate, leader: leader.trim(), title: title.trim(), content: content.trim(), participants: participants.trim() })
-    } else {
-      onSave({
-        id: Date.now().toString(), startDate, endDate,
-        leader: leader.trim(), title: title.trim(), content: content.trim(),
-        participants: participants.trim(),
-        pwHash: simpleHash(pw.trim()),
-        createdAt: new Date().toISOString(),
-      })
-    }
-  }
-
-  const nights = startDate && endDate ? dayDiff(startDate, endDate) : 0
-
-  return (
-    <div style={{ flex: 1, padding: '20px 16px 100px' }}>
-      {/* 폼 헤더 카드 */}
-      <div style={{
-        background: C.yellow, border: `3px solid ${C.border}`,
-        borderRadius: R.wobblyLg, boxShadow: S.base,
-        padding: '16px 18px', marginBottom: 24,
-        display: 'flex', alignItems: 'center', gap: 12,
-        transform: 'rotate(-0.5deg)',
-      }}>
-        <span style={{ fontSize: 32 }}>✈️</span>
-        <div>
-          <h2 style={{ fontSize: 18, fontWeight: 700, color: C.text, marginBottom: 2 }}>
-            {editEvent ? '여행 일정 수정' : '새 여행 등록!'}
-          </h2>
-          <p style={{ fontSize: 12, color: '#666', margin: 0 }}>
-            {editEvent ? '내용을 고쳐보세요 ✏️' : '고난크루의 새 여행을 기록하세요 🗺️'}
-          </p>
-        </div>
-      </div>
-
-      <form onSubmit={handleSubmit}>
-        {/* 날짜 */}
-        <div style={{ marginBottom: 20 }}>
-          <label style={{
-            display: 'block', fontSize: 13, fontWeight: 700,
-            color: C.accentBlue, marginBottom: 7, fontFamily: "'Noto Sans KR', 'Kalam', cursive",
-          }}>📅 여행 날짜</label>
-          <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 11, color: '#888', marginBottom: 4, fontWeight: 700 }}>시작</div>
-              <input type="date" value={startDate} onChange={e => handleStartDate(e.target.value)} style={inputCss(errors.startDate)} />
-            </div>
-            <div style={{ paddingTop: 26, color: '#aaa', fontWeight: 700, fontSize: 18 }}>~</div>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 11, color: '#888', marginBottom: 4, fontWeight: 700 }}>종료</div>
-              <input type="date" value={endDate} min={startDate}
-                onChange={e => { setEndDate(e.target.value); setErrors(v => ({ ...v, endDate: null })) }}
-                style={inputCss(errors.endDate)} />
-            </div>
-          </div>
-          {errors.startDate && <p style={{ color: C.accent, fontSize: 12, margin: '5px 0 0', fontStyle: 'italic' }}>{errors.startDate}</p>}
-          {errors.endDate && <p style={{ color: C.accent, fontSize: 12, margin: '5px 0 0', fontStyle: 'italic' }}>{errors.endDate}</p>}
-          {nights > 0 && (
-            <div style={{
-              marginTop: 10, display: 'inline-flex', alignItems: 'center', gap: 6,
-              background: C.accentBlue, color: '#fff',
-              border: `2px solid ${C.border}`, borderRadius: R.tag,
-              boxShadow: S.small, padding: '4px 12px',
-              transform: 'rotate(-1deg)',
-            }}>
-              <span>🌙</span>
-              <span style={{ fontSize: 13, fontWeight: 700, fontFamily: "'Noto Sans KR', 'Kalam', cursive" }}>{nights}박 {nights + 1}일</span>
-            </div>
-          )}
-        </div>
-
-        <FormField label="👤 리딩 (주최자)" error={errors.leader}>
-          <input type="text" value={leader}
-            onChange={e => { setLeader(e.target.value); setErrors(v => ({ ...v, leader: null })) }}
-            placeholder="예) 김벙주" style={inputCss(errors.leader)} />
-        </FormField>
-
-        <FormField label="🗺️ 여행 제목" error={errors.title}>
-          <input type="text" value={title}
-            onChange={e => { setTitle(e.target.value); setErrors(v => ({ ...v, title: null })) }}
-            placeholder="예) 제주도 3박 4일" style={inputCss(errors.title)} />
-        </FormField>
-
-        <FormField label="📝 여행 내용">
-          <textarea value={content} onChange={e => setContent(e.target.value)}
-            placeholder={"장소, 숙소, 준비물 등\n자유롭게 적어주세요 🏖️"}
-            rows={5} style={{ ...inputCss(false), resize: 'vertical', lineHeight: 1.7 }} />
-        </FormField>
-
-        <FormField label="🧑‍🤝‍🧑 참석자" hint="나중에 누구든 자유롭게 수정할 수 있어요.">
-          <textarea value={participants} onChange={e => setParticipants(e.target.value)}
-            placeholder={"참석자 이름을 적어주세요\n예) 김벙주, 이고고, 박여행"}
-            rows={3} style={{ ...inputCss(false), resize: 'vertical', lineHeight: 1.7 }} />
-        </FormField>
-
-        {!editEvent && (
-          <FormField label="🔒 비밀번호" error={errors.pw} hint="이 비밀번호로만 수정·삭제할 수 있어요.">
-            <input type="password" value={pw}
-              onChange={e => { setPw(e.target.value); setErrors(v => ({ ...v, pw: null })) }}
-              placeholder="나만의 비밀 암호..." style={inputCss(errors.pw)} />
-          </FormField>
-        )}
-
-        <div style={{ display: 'flex', gap: 12, marginTop: 24 }}>
-          <button type="button" onClick={onCancel} disabled={submitting} className="btn-muted" style={{
-            flex: 1, padding: '14px', fontSize: 15, fontWeight: 700, opacity: submitting ? 0.5 : 1,
-          }}>취소</button>
-          <button type="submit" disabled={submitting} className="btn-sketch" style={{
-            flex: 2, padding: '14px', fontSize: 15, fontWeight: 700, opacity: submitting ? 0.7 : 1,
-          }}>
-            {submitting ? '저장 중... ✏️' : editEvent ? '✅ 수정 완료!' : '🚀 여행 등록!'}
-          </button>
-        </div>
-      </form>
-    </div>
-  )
-}
 
 // ── 토스트 ───────────────────────────────────────────────────
 function Toast({ msg }) {
@@ -1175,12 +842,10 @@ export default function App() {
   const [month, setMonth] = useState(now.getMonth())
   const [events, setEvents] = useState([])
   const [loading, setLoading] = useState(true)
-  const [submitting, setSubmitting] = useState(false)
+  const [syncing, setSyncing] = useState(false)
   const [selectedDate, setSelectedDate] = useState(null)
   const [view, setView] = useState(VIEW.CALENDAR)
   const [selectedEvent, setSelectedEvent] = useState(null)
-  const [editingEvent, setEditingEvent] = useState(null)
-  const [pwModal, setPwModal] = useState(null)
   const [toast, setToast] = useState(null)
 
   useEffect(() => {
@@ -1204,87 +869,29 @@ export default function App() {
 
   function handleSelectDate(date) { setSelectedDate(prev => prev === date ? null : date) }
   function handleSelectEvent(ev) { setSelectedEvent(ev); setView(VIEW.DETAIL) }
-  function handleAddClick() { setEditingEvent(null); setView(VIEW.FORM) }
-  function handleAddFromDate() { setEditingEvent(null); setView(VIEW.FORM) }
 
-  async function handleSaveEvent(ev) {
-    setSubmitting(true)
+  async function handleSync() {
+    if (syncing) return
+    setSyncing(true)
     try {
-      if (editingEvent) {
-        const res = await gasPost({ action: 'update', ...ev })
-        if (res.status === 'unauthorized') { showToast('🔒 비밀번호가 틀렸어요!'); return }
-        if (res.status !== 'updated') { showToast('❌ 수정 실패'); return }
-        setEvents(prev => prev.map(e => e.id === ev.id ? ev : e))
-        setSelectedEvent(ev); setView(VIEW.DETAIL)
-        showToast('✅ 수정됐어요!')
+      const res = await gasSync()
+      if (res.status === 'ok') {
+        setEvents(res.data)
+        showToast(`✅ ${res.upserted}개 일정을 불러왔어요!`)
       } else {
-        const res = await gasPost({ action: 'create', ...ev })
-        if (res.status !== 'created') { showToast('❌ 등록 실패'); return }
-        setEvents(prev => [...prev, ev])
-        setSelectedDate(ev.startDate)
-        const [y, m] = ev.startDate.split('-').map(Number)
-        setYear(y); setMonth(m - 1); setView(VIEW.CALENDAR)
-        showToast('🚀 여행 등록 완료!')
+        showToast('❌ 불러오기 실패')
       }
     } catch {
-      showToast('❌ 오류가 발생했어요')
+      showToast('❌ 서버 연결 실패')
     } finally {
-      setSubmitting(false); setEditingEvent(null)
-    }
-  }
-
-  async function handlePwConfirm(pw) {
-    const hash = simpleHash(pw)
-    if (hash !== selectedEvent.pwHash) {
-      showToast('🔒 비밀번호가 틀렸어요!')
-      setPwModal(null); return
-    }
-    if (pwModal.action === 'edit') {
-      setEditingEvent(selectedEvent); setPwModal(null); setView(VIEW.FORM); return
-    }
-    setSubmitting(true)
-    try {
-      const res = await gasPost({ action: 'delete', id: selectedEvent.id, pwHash: hash })
-      if (res.status === 'unauthorized') { showToast('🔒 비밀번호가 틀렸어요!'); return }
-      if (res.status !== 'deleted') { showToast('❌ 삭제 실패'); return }
-      setEvents(prev => prev.filter(e => e.id !== selectedEvent.id))
-      setSelectedEvent(null); setView(VIEW.CALENDAR)
-      showToast('🗑️ 삭제됐어요!')
-    } catch {
-      showToast('❌ 오류가 발생했어요')
-    } finally {
-      setSubmitting(false); setPwModal(null)
-    }
-  }
-
-  async function handleUpdateParticipants(participants) {
-    setSubmitting(true)
-    console.log('[updateParticipants] 시작, id:', selectedEvent.id, 'participants:', participants)
-    try {
-      const res = await gasPost({ action: 'updateParticipants', id: selectedEvent.id, participants })
-      console.log('[updateParticipants] res:', JSON.stringify(res))
-      if (res.status !== 'updated') { showToast('❌ 참석자 저장 실패'); return }
-      const updated = { ...selectedEvent, participants }
-      setEvents(prev => prev.map(e => e.id === selectedEvent.id ? updated : e))
-      setSelectedEvent(updated)
-      showToast('✅ 참석자가 저장됐어요!')
-    } catch(err) {
-      console.log('[updateParticipants] catch error:', err?.message)
-      showToast('❌ 오류가 발생했어요')
-    } finally {
-      setSubmitting(false)
+      setSyncing(false)
     }
   }
 
   const isDesktop = useIsDesktop()
   const { show: showInstall, isIOS, install, dismiss: dismissInstall } = useInstallPrompt()
 
-  const onBack = view === VIEW.DETAIL
-    ? () => setView(VIEW.CALENDAR)
-    : view === VIEW.FORM
-    ? () => { if (editingEvent) { setView(VIEW.DETAIL); setEditingEvent(null) } else setView(VIEW.CALENDAR) }
-    : null
-  const onAdd = view === VIEW.CALENDAR ? handleAddClick : null
+  const onBack = view === VIEW.DETAIL ? () => setView(VIEW.CALENDAR) : null
 
   const desktopCardStyle = {
     maxWidth: 680, margin: '32px auto', width: '100%',
@@ -1297,7 +904,7 @@ export default function App() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100svh' }}>
-      <Header view={view} onBack={onBack} onAdd={onAdd} isDesktop={isDesktop} />
+      <Header view={view} onBack={onBack} onSync={handleSync} syncing={syncing} isDesktop={isDesktop} />
 
       <div style={{ flex: 1, overflowY: 'auto', paddingTop: isDesktop ? 64 : 60 }}>
         {loading ? (
@@ -1315,7 +922,7 @@ export default function App() {
                   isDesktop={false}
                 />
                 <div style={{ marginTop: 8 }}>
-                  <EventList date={selectedDate} year={year} month={month} events={events} onSelect={handleSelectEvent} onAdd={selectedDate ? handleAddFromDate : null} />
+                  <EventList date={selectedDate} year={year} month={month} events={events} onSelect={handleSelectEvent} />
                 </div>
               </>
             )}
@@ -1351,7 +958,7 @@ export default function App() {
                       })() : `📋 ${year}년 ${month + 1}월 전체`}
                     </h3>
                   </div>
-                  <EventList date={selectedDate} year={year} month={month} events={events} onSelect={handleSelectEvent} onAdd={selectedDate ? handleAddFromDate : null} />
+                  <EventList date={selectedDate} year={year} month={month} events={events} onSelect={handleSelectEvent} />
                 </div>
               </div>
             )}
@@ -1360,65 +967,17 @@ export default function App() {
               isDesktop ? (
                 <div style={{ maxWidth: 1200, margin: '0 auto', padding: '32px 40px' }}>
                   <div style={desktopCardStyle}>
-                    <EventDetail
-                      event={selectedEvent}
-                      onEdit={() => setPwModal({ action: 'edit' })}
-                      onDelete={() => setPwModal({ action: 'delete' })}
-                      onUpdateParticipants={handleUpdateParticipants}
-                      updatingParticipants={submitting}
-                    />
+                    <EventDetail event={selectedEvent} />
                   </div>
                 </div>
               ) : (
-                <EventDetail
-                  event={selectedEvent}
-                  onEdit={() => setPwModal({ action: 'edit' })}
-                  onDelete={() => setPwModal({ action: 'delete' })}
-                />
-              )
-            )}
-
-            {view === VIEW.FORM && (
-              isDesktop ? (
-                <div style={{ maxWidth: 1200, margin: '0 auto', padding: '32px 40px' }}>
-                  <div style={desktopCardStyle}>
-                    <EventForm
-                      initialDate={selectedDate}
-                      editEvent={editingEvent}
-                      onSave={handleSaveEvent}
-                      submitting={submitting}
-                      onCancel={() => {
-                        if (editingEvent) { setView(VIEW.DETAIL); setEditingEvent(null) }
-                        else setView(VIEW.CALENDAR)
-                      }}
-                    />
-                  </div>
-                </div>
-              ) : (
-                <EventForm
-                  initialDate={selectedDate}
-                  editEvent={editingEvent}
-                  onSave={handleSaveEvent}
-                  submitting={submitting}
-                  onCancel={() => {
-                    if (editingEvent) { setView(VIEW.DETAIL); setEditingEvent(null) }
-                    else setView(VIEW.CALENDAR)
-                  }}
-                />
+                <EventDetail event={selectedEvent} />
               )
             )}
           </>
         )}
       </div>
 
-      {pwModal && (
-        <PwModal
-          title={pwModal.action === 'edit' ? '✏️ 일정 수정' : '🗑️ 일정 삭제'}
-          onConfirm={handlePwConfirm}
-          onCancel={() => setPwModal(null)}
-          loading={submitting}
-        />
-      )}
       {toast && <Toast msg={toast} />}
       {showInstall && (
         <InstallBanner isIOS={isIOS} onInstall={install} onDismiss={dismissInstall} />
