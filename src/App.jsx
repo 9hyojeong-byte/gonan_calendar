@@ -51,9 +51,10 @@ function useInstallPrompt() {
     if (outcome !== 'accepted') setPrompt(null)
   }
 
-  // 설치 버튼 표시 조건: 앱으로 실행 중이 아닐 때 + (prompt 있거나 iOS)
-  const canInstall = !isInstalled && (prompt !== null || isIOS)
-  return { canInstall, isIOS, install }
+  const isMobile = isIOS || /android/i.test(navigator.userAgent)
+  // 모바일이면 항상 버튼 표시 (설치 여부 무관)
+  const canInstall = isMobile
+  return { canInstall, isInstalled, isIOS, install }
 }
 
 function InstallBanner({ isIOS, onInstall, onDismiss }) {
@@ -1030,7 +1031,7 @@ export default function App() {
   }
 
   const isDesktop = useIsDesktop()
-  const { canInstall, install } = useInstallPrompt()
+  const { canInstall, isInstalled, install } = useInstallPrompt()
 
   const onBack = view === VIEW.DETAIL ? () => setView(VIEW.CALENDAR) : null
 
@@ -1045,7 +1046,8 @@ export default function App() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100svh' }}>
-      <Header view={view} onBack={onBack} isDesktop={isDesktop} canInstall={canInstall} onInstall={install} />
+      <Header view={view} onBack={onBack} isDesktop={isDesktop} canInstall={canInstall}
+        onInstall={isInstalled ? () => showToast('✅ 이미 설치되어 있습니다!') : install} />
 
       <div style={{ flex: 1, overflowY: 'auto', paddingTop: isDesktop ? 64 : 60 }}>
         {loading ? (
