@@ -226,29 +226,8 @@ function AdminModal({ onClose }) {
         {tab === 'menu' && (
           <>
             <h3 style={{ fontSize: 18, fontWeight: 700, color: C.text, marginBottom: 16, textAlign: 'center' }}>
-              🛠️ 관리 메뉴
+              🛠️ 도움말 & 관리
             </h3>
-
-            {/* 구글시트 */}
-            <button
-              onClick={() => { window.open(SHEET_URL, '_blank', 'noopener,noreferrer'); onClose() }}
-              style={{
-                width: '100%', display: 'flex', alignItems: 'center', gap: 14,
-                background: C.white, border: `3px solid ${C.border}`,
-                borderRadius: R.wobblyMd, boxShadow: S.base,
-                padding: '14px 18px', marginBottom: 12,
-                fontSize: 15, fontWeight: 700, color: C.text,
-                textAlign: 'left', transition: 'transform 0.1s, box-shadow 0.1s',
-              }}
-              onMouseEnter={e => { e.currentTarget.style.transform = 'translate(2px,2px)'; e.currentTarget.style.boxShadow = S.small }}
-              onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = S.base }}
-            >
-              <span style={{ fontSize: 24 }}>📊</span>
-              <div>
-                <div>구글 시트 열기</div>
-                <div style={{ fontSize: 12, fontWeight: 400, color: '#888', marginTop: 2 }}>일정 데이터를 직접 확인·수정해요</div>
-              </div>
-            </button>
 
             {/* 도움말 */}
             <button
@@ -257,7 +236,7 @@ function AdminModal({ onClose }) {
                 width: '100%', display: 'flex', alignItems: 'center', gap: 14,
                 background: C.yellow, border: `3px solid ${C.border}`,
                 borderRadius: R.wobblyMd, boxShadow: S.base,
-                padding: '14px 18px', marginBottom: 20,
+                padding: '14px 18px', marginBottom: 12,
                 fontSize: 15, fontWeight: 700, color: C.text,
                 textAlign: 'left', transition: 'transform 0.1s, box-shadow 0.1s',
               }}
@@ -268,6 +247,27 @@ function AdminModal({ onClose }) {
               <div>
                 <div>도움말 보기</div>
                 <div style={{ fontSize: 12, fontWeight: 400, color: '#888', marginTop: 2 }}>캘린더 사용법 & 데이터 동기화 안내</div>
+              </div>
+            </button>
+
+            {/* 구글시트 */}
+            <button
+              onClick={() => { window.open(SHEET_URL, '_blank', 'noopener,noreferrer'); onClose() }}
+              style={{
+                width: '100%', display: 'flex', alignItems: 'center', gap: 14,
+                background: C.white, border: `3px solid ${C.border}`,
+                borderRadius: R.wobblyMd, boxShadow: S.base,
+                padding: '14px 18px', marginBottom: 20,
+                fontSize: 15, fontWeight: 700, color: C.text,
+                textAlign: 'left', transition: 'transform 0.1s, box-shadow 0.1s',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.transform = 'translate(2px,2px)'; e.currentTarget.style.boxShadow = S.small }}
+              onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = S.base }}
+            >
+              <span style={{ fontSize: 24 }}>📊</span>
+              <div>
+                <div>구글 시트 열기</div>
+                <div style={{ fontSize: 12, fontWeight: 400, color: '#888', marginTop: 2 }}>일정 데이터를 직접 확인·수정해요</div>
               </div>
             </button>
 
