@@ -110,7 +110,7 @@ function useIsDesktop() {
 }
 
 // ── GAS ───────────────────────────────────────────────────────
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbyLrN1CAXR9NYHYHTqD4UrCduN53QYoqAl3dmYIWf88FqQACJtQYpgfDMRSOpNpri_-kQ/exec'
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbxdZ-akkzcyh5J06rt260Y98WezYCWBJHBV4wsXAZBAZP-Uehviv7PnzqNld1me4m4hyw/exec'
 
 function jsonpCall(params, timeoutMs = 15000) {
   return new Promise((resolve, reject) => {
@@ -199,75 +199,226 @@ const MAX_SLOTS = 3
 
 const SHEET_URL = 'https://docs.google.com/spreadsheets/d/1I-j29J_sau7mJpjfmXrsyvtK2Xe-NqGByOyW3YNzpNI/edit?gid=2140106036#gid=2140106036'
 
+// ── 어드민 모달 ───────────────────────────────────────────────
+function AdminModal({ onClose }) {
+  const [tab, setTab] = useState('menu') // 'menu' | 'help'
+
+  return (
+    <div
+      style={{
+        position: 'fixed', inset: 0, background: 'rgba(45,45,45,0.45)',
+        display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+        zIndex: 100,
+      }}
+      onClick={e => e.target === e.currentTarget && onClose()}
+    >
+      <div style={{
+        width: '100%', maxWidth: 480,
+        background: C.bg, borderTop: `3px solid ${C.border}`,
+        borderRadius: '24px 24px 0 0',
+        padding: '8px 20px 40px',
+        boxShadow: '0 -4px 0px 0px #2d2d2d',
+        maxHeight: '80vh', overflowY: 'auto',
+      }}>
+        {/* 핸들 */}
+        <div style={{ width: 40, height: 4, background: C.muted, borderRadius: 2, margin: '14px auto 18px' }} />
+
+        {tab === 'menu' && (
+          <>
+            <h3 style={{ fontSize: 18, fontWeight: 700, color: C.text, marginBottom: 16, textAlign: 'center' }}>
+              🛠️ 관리 메뉴
+            </h3>
+
+            {/* 구글시트 */}
+            <button
+              onClick={() => { window.open(SHEET_URL, '_blank', 'noopener,noreferrer'); onClose() }}
+              style={{
+                width: '100%', display: 'flex', alignItems: 'center', gap: 14,
+                background: C.white, border: `3px solid ${C.border}`,
+                borderRadius: R.wobblyMd, boxShadow: S.base,
+                padding: '14px 18px', marginBottom: 12,
+                fontSize: 15, fontWeight: 700, color: C.text,
+                textAlign: 'left', transition: 'transform 0.1s, box-shadow 0.1s',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.transform = 'translate(2px,2px)'; e.currentTarget.style.boxShadow = S.small }}
+              onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = S.base }}
+            >
+              <span style={{ fontSize: 24 }}>📊</span>
+              <div>
+                <div>구글 시트 열기</div>
+                <div style={{ fontSize: 12, fontWeight: 400, color: '#888', marginTop: 2 }}>일정 데이터를 직접 확인·수정해요</div>
+              </div>
+            </button>
+
+            {/* 도움말 */}
+            <button
+              onClick={() => setTab('help')}
+              style={{
+                width: '100%', display: 'flex', alignItems: 'center', gap: 14,
+                background: C.yellow, border: `3px solid ${C.border}`,
+                borderRadius: R.wobblyMd, boxShadow: S.base,
+                padding: '14px 18px', marginBottom: 20,
+                fontSize: 15, fontWeight: 700, color: C.text,
+                textAlign: 'left', transition: 'transform 0.1s, box-shadow 0.1s',
+              }}
+              onMouseEnter={e => { e.currentTarget.style.transform = 'translate(2px,2px)'; e.currentTarget.style.boxShadow = S.small }}
+              onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = S.base }}
+            >
+              <span style={{ fontSize: 24 }}>📖</span>
+              <div>
+                <div>도움말 보기</div>
+                <div style={{ fontSize: 12, fontWeight: 400, color: '#888', marginTop: 2 }}>캘린더 사용법 & 데이터 동기화 안내</div>
+              </div>
+            </button>
+
+            <button onClick={onClose} className="btn-muted" style={{ width: '100%', padding: '12px', fontSize: 14, fontWeight: 700 }}>
+              닫기
+            </button>
+          </>
+        )}
+
+        {tab === 'help' && (
+          <>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 18 }}>
+              <button
+                onClick={() => setTab('menu')}
+                style={{
+                  width: 32, height: 32, borderRadius: R.wobblyMd,
+                  border: `2px solid ${C.border}`, background: C.muted,
+                  fontWeight: 700, fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}
+              >←</button>
+              <h3 style={{ fontSize: 18, fontWeight: 700, color: C.text, margin: 0 }}>📖 도움말</h3>
+            </div>
+
+            {[
+              {
+                emoji: '⏱️',
+                title: '자동 데이터 수집',
+                body: '소모임 대문 페이지의 [관심사] 게시글 최근 4개를 6시간마다 자동으로 가져와요. 별도로 새로고침하지 않아도 돼요.',
+              },
+              {
+                emoji: '🔄',
+                title: '스마트 업데이트',
+                body: '게시글 제목이나 내용이 바뀌어도, 작성자 · 일정 시작일 · 일정 종료일이 동일하면 같은 일정으로 인식해서 자동으로 업데이트돼요. 중복 등록 걱정 없어요!',
+              },
+              {
+                emoji: '📅',
+                title: '날짜 선택',
+                body: '캘린더에서 날짜를 탭하면 해당 날짜의 일정 목록이 아래에 펼쳐져요. 같은 날짜를 다시 탭하면 선택이 해제돼요.',
+              },
+              {
+                emoji: '🎨',
+                title: '일정 색상',
+                body: '각 일정의 색상은 일정 ID를 기반으로 자동 배정돼요. 매번 같은 색으로 표시돼요.',
+              },
+              {
+                emoji: '📌',
+                title: '이벤트 바',
+                body: '여러 날에 걸친 일정은 캘린더에서 가로 막대로 표시돼요. 해당 주 안에서 날짜 범위만큼 길게 이어져요. 같은 날 일정이 1개뿐이면 막대가 두 배 높이로 크게 표시돼요.',
+              },
+              {
+                emoji: '📲',
+                title: 'PWA 설치',
+                body: '홈 화면에 추가하면 앱처럼 사용할 수 있어요. Safari(iOS)에서는 공유 → "홈 화면에 추가", Android/Chrome에서는 설치 배너를 이용해요.',
+              },
+            ].map(({ emoji, title, body }) => (
+              <div key={title} style={{
+                background: C.white, border: `2px solid ${C.border}`,
+                borderRadius: R.wobblyMd, boxShadow: S.small,
+                padding: '13px 15px', marginBottom: 10,
+              }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: C.accentBlue, marginBottom: 4 }}>
+                  {emoji} {title}
+                </div>
+                <div style={{ fontSize: 13, color: C.text, lineHeight: 1.7 }}>{body}</div>
+              </div>
+            ))}
+
+            <button onClick={onClose} className="btn-muted" style={{ width: '100%', padding: '12px', fontSize: 14, fontWeight: 700, marginTop: 8 }}>
+              닫기
+            </button>
+          </>
+        )}
+      </div>
+    </div>
+  )
+}
+
 // ── 헤더 ─────────────────────────────────────────────────────
 function Header({ view, onBack, onSync, syncing, isDesktop }) {
   const isCalendar = view === VIEW.CALENDAR
   const tapCount = useRef(0)
   const tapTimer = useRef(null)
+  const [showAdmin, setShowAdmin] = useState(false)
 
   function handleSecretTap() {
     tapCount.current += 1
     clearTimeout(tapTimer.current)
     if (tapCount.current >= 10) {
       tapCount.current = 0
-      window.open(SHEET_URL, '_blank', 'noopener,noreferrer')
+      setShowAdmin(true)
       return
     }
     tapTimer.current = setTimeout(() => { tapCount.current = 0 }, 2000)
   }
 
   return (
-    <div style={{
-      background: C.white,
-      borderBottom: `3px dashed ${C.border}`,
-      padding: isDesktop ? '12px 40px' : '10px 16px',
-      position: 'fixed', top: 0, left: 0, right: 0, zIndex: 10,
-    }}>
+    <>
       <div style={{
-        position: 'relative', display: 'flex', alignItems: 'center',
-        maxWidth: isDesktop ? 1200 : '100%', margin: '0 auto',
+        background: C.white,
+        borderBottom: `3px dashed ${C.border}`,
+        padding: isDesktop ? '12px 40px' : '10px 16px',
+        position: 'fixed', top: 0, left: 0, right: 0, zIndex: 10,
       }}>
-        {/* 뒤로가기 + 히든 탭 영역 */}
-        <div style={{ position: 'relative', flexShrink: 0 }}>
-          <div onClick={handleSecretTap} style={{
-            position: 'absolute', top: -10, left: -10,
-            width: 48, height: 48, zIndex: 1,
-          }} />
-          <button onClick={onBack} style={{
-            width: 38, height: 38,
-            borderRadius: R.wobblyMd,
-            border: onBack ? `3px solid ${C.border}` : 'none',
-            background: onBack ? C.muted : 'transparent',
-            boxShadow: onBack ? S.small : 'none',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 18, fontWeight: 700,
-            opacity: onBack ? 1 : 0, pointerEvents: onBack ? 'auto' : 'none',
-            flexShrink: 0, transition: 'transform 0.1s',
-            position: 'relative', zIndex: 2,
-          }} className={onBack ? 'btn-muted' : ''}>←</button>
-        </div>
-
-        {/* 타이틀 — 절대 가운데 고정 */}
         <div style={{
-          position: 'absolute', left: 0, right: 0,
-          display: 'flex', justifyContent: 'center', alignItems: 'center',
-          pointerEvents: 'none',
+          position: 'relative', display: 'flex', alignItems: 'center',
+          maxWidth: isDesktop ? 1200 : '100%', margin: '0 auto',
         }}>
-          {isCalendar ? (
-            <h1 style={{
-              fontSize: isDesktop ? 24 : 20, fontWeight: 700,
-              color: C.text, lineHeight: 1,
-              transform: 'rotate(-1deg)', display: 'inline-block',
-              margin: 0,
-            }}>📆고난 캘린더🌄</h1>
-          ) : (
-            <h2 style={{ fontSize: isDesktop ? 20 : 17, fontWeight: 700, color: C.text, margin: 0 }}>
-              여행 상세 📋
-            </h2>
-          )}
+          {/* 뒤로가기 + 히든 탭 영역 */}
+          <div style={{ position: 'relative', flexShrink: 0 }}>
+            <div onClick={handleSecretTap} style={{
+              position: 'absolute', top: -10, left: -10,
+              width: 48, height: 48, zIndex: 1,
+            }} />
+            <button onClick={onBack} style={{
+              width: 38, height: 38,
+              borderRadius: R.wobblyMd,
+              border: onBack ? `3px solid ${C.border}` : 'none',
+              background: onBack ? C.muted : 'transparent',
+              boxShadow: onBack ? S.small : 'none',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 18, fontWeight: 700,
+              opacity: onBack ? 1 : 0, pointerEvents: onBack ? 'auto' : 'none',
+              flexShrink: 0, transition: 'transform 0.1s',
+              position: 'relative', zIndex: 2,
+            }} className={onBack ? 'btn-muted' : ''}>←</button>
+          </div>
+
+          {/* 타이틀 — 절대 가운데 고정 */}
+          <div style={{
+            position: 'absolute', left: 0, right: 0,
+            display: 'flex', justifyContent: 'center', alignItems: 'center',
+            pointerEvents: 'none',
+          }}>
+            {isCalendar ? (
+              <h1 style={{
+                fontSize: isDesktop ? 24 : 20, fontWeight: 700,
+                color: C.text, lineHeight: 1,
+                transform: 'rotate(-1deg)', display: 'inline-block',
+                margin: 0,
+              }}>📆고난 캘린더🌄</h1>
+            ) : (
+              <h2 style={{ fontSize: isDesktop ? 20 : 17, fontWeight: 700, color: C.text, margin: 0 }}>
+                여행 상세 📋
+              </h2>
+            )}
+          </div>
         </div>
       </div>
-    </div>
+
+      {showAdmin && <AdminModal onClose={() => setShowAdmin(false)} />}
+    </>
   )
 }
 
