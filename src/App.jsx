@@ -44,56 +44,67 @@ function useInstallPrompt() {
   }, [isInstalled])
 
   const install = async () => {
-    if (isIOS) return // iOS는 버튼 안 보임
-    if (!prompt) return
-    prompt.prompt()
-    const { outcome } = await prompt.userChoice
-    if (outcome !== 'accepted') setPrompt(null)
+    if (prompt) {
+      prompt.prompt()
+      const { outcome } = await prompt.userChoice
+      if (outcome !== 'accepted') setPrompt(null)
+    }
+    // prompt 없으면 → 호출부에서 수동 안내 처리
   }
 
   const isMobile = isIOS || /android/i.test(navigator.userAgent)
-  // 모바일이면 항상 버튼 표시 (설치 여부 무관)
   const canInstall = isMobile
-  return { canInstall, isInstalled, isIOS, install }
+  // hasNativePrompt: true면 네이티브 다이얼로그 가능, false면 수동 안내 필요
+  const hasNativePrompt = prompt !== null
+  return { canInstall, isInstalled, isIOS, hasNativePrompt, install }
 }
 
-function InstallBanner({ isIOS, onInstall, onDismiss }) {
+function InstallGuideModal({ isIOS, onClose }) {
+  const steps = isIOS
+    ? [
+        { icon: '1️⃣', text: <>Safari 하단 공유 버튼 <strong>⬆️</strong> 을 탭해요</> },
+        { icon: '2️⃣', text: <><strong>"홈 화면에 추가"</strong> 를 선택해요</> },
+        { icon: '3️⃣', text: <>오른쪽 상단 <strong>"추가"</strong> 를 탭하면 완료!</> },
+      ]
+    : [
+        { icon: '1️⃣', text: <>브라우저 우측 상단 <strong>메뉴(⋮)</strong> 를 탭해요</> },
+        { icon: '2️⃣', text: <><strong>"홈 화면에 추가"</strong> 또는 <strong>"앱 설치"</strong> 를 선택해요</> },
+        { icon: '3️⃣', text: <>확인을 누르면 홈 화면에 아이콘이 생겨요!</> },
+      ]
+
   return (
-    <div style={{
-      position: 'fixed', bottom: 12, left: 12, right: 12, zIndex: 9999,
-      background: C.yellow, border: `3px solid ${C.border}`,
-      borderRadius: R.wobblyMd, boxShadow: S.large,
-      padding: '14px 16px', maxWidth: 456, margin: '0 auto',
-      transform: 'rotate(-0.5deg)',
-    }}>
-      {/* 테이프 장식 */}
+    <div
+      style={{ position: 'fixed', inset: 0, background: 'rgba(45,45,45,0.45)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', zIndex: 100 }}
+      onClick={e => e.target === e.currentTarget && onClose()}
+    >
       <div style={{
-        position: 'absolute', top: -8, left: '50%', transform: 'translateX(-50%) rotate(-2deg)',
-        width: 56, height: 14, background: 'rgba(200,200,200,0.55)',
-        borderRadius: 2, border: '1px solid rgba(0,0,0,0.1)',
-      }} />
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-        <span style={{ fontSize: 28 }}>✈️</span>
-        <div style={{ flex: 1 }}>
-          <h4 style={{ fontSize: 16, fontWeight: 700, marginBottom: 2 }}>고난크루 앱 설치하기!</h4>
-          <p style={{ fontSize: 13, color: '#555', margin: 0 }}>홈 화면에 추가하면 더 편리해요</p>
-        </div>
-        <button onClick={onDismiss} style={{ fontSize: 18, color: '#888', padding: 4 }}>✕</button>
+        width: '100%', maxWidth: 480,
+        background: C.bg, borderTop: `3px solid ${C.border}`,
+        borderRadius: '24px 24px 0 0', padding: '8px 20px 40px',
+        boxShadow: '0 -4px 0px 0px #2d2d2d',
+      }}>
+        <div style={{ width: 40, height: 4, background: C.muted, borderRadius: 2, margin: '14px auto 18px' }} />
+        <h3 style={{ fontSize: 18, fontWeight: 700, color: C.text, marginBottom: 6, textAlign: 'center' }}>
+          ⬇️ 홈 화면에 추가하기
+        </h3>
+        <p style={{ fontSize: 13, color: '#888', textAlign: 'center', marginBottom: 20 }}>
+          {isIOS ? 'Safari에서 아래 순서로 진행해주세요' : '브라우저 메뉴에서 아래 순서로 진행해주세요'}
+        </p>
+        {steps.map((s, i) => (
+          <div key={i} style={{
+            display: 'flex', alignItems: 'flex-start', gap: 12,
+            background: C.white, border: `2px solid ${C.border}`,
+            borderRadius: R.wobblyMd, boxShadow: S.small,
+            padding: '12px 14px', marginBottom: 10,
+          }}>
+            <span style={{ fontSize: 20 }}>{s.icon}</span>
+            <span style={{ fontSize: 14, color: C.text, lineHeight: 1.6 }}>{s.text}</span>
+          </div>
+        ))}
+        <button onClick={onClose} className="btn-muted" style={{ width: '100%', padding: '12px', fontSize: 14, fontWeight: 700, marginTop: 8 }}>
+          닫기
+        </button>
       </div>
-      {isIOS ? (
-        <div style={{ marginTop: 10, fontSize: 13, color: C.text, lineHeight: 1.6 }}>
-          Safari 하단 <strong>공유(⬆️)</strong> → <strong>"홈 화면에 추가"</strong>
-        </div>
-      ) : onInstall ? (
-        <button onClick={onInstall} className="btn-sketch" style={{
-          marginTop: 12, width: '100%', padding: '11px 0',
-          fontSize: 15, fontWeight: 700,
-        }}>홈 화면에 추가하기 ✏️</button>
-      ) : (
-        <div style={{ marginTop: 10, fontSize: 13, color: C.text, lineHeight: 1.6 }}>
-          브라우저 메뉴 → <strong>"홈 화면에 추가"</strong> 또는 <strong>"앱 설치"</strong>
-        </div>
-      )}
     </div>
   )
 }
@@ -1031,7 +1042,8 @@ export default function App() {
   }
 
   const isDesktop = useIsDesktop()
-  const { canInstall, isInstalled, install } = useInstallPrompt()
+  const { canInstall, isInstalled, isIOS, hasNativePrompt, install } = useInstallPrompt()
+  const [showInstallGuide, setShowInstallGuide] = useState(false)
 
   const onBack = view === VIEW.DETAIL ? () => setView(VIEW.CALENDAR) : null
 
@@ -1047,7 +1059,11 @@ export default function App() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100svh' }}>
       <Header view={view} onBack={onBack} isDesktop={isDesktop} canInstall={canInstall}
-        onInstall={isInstalled ? () => showToast('✅ 이미 설치되어 있습니다!') : install} />
+        onInstall={
+          isInstalled    ? () => showToast('✅ 이미 설치되어 있습니다!') :
+          hasNativePrompt ? install :
+          () => setShowInstallGuide(true)
+        } />
 
       <div style={{ flex: 1, overflowY: 'auto', paddingTop: isDesktop ? 64 : 60 }}>
         {loading ? (
@@ -1122,6 +1138,7 @@ export default function App() {
       </div>
 
       {toast && <Toast msg={toast} />}
+      {showInstallGuide && <InstallGuideModal isIOS={isIOS} onClose={() => setShowInstallGuide(false)} />}
     </div>
   )
 }
