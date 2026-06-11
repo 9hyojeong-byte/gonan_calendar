@@ -32,17 +32,17 @@ const S = {
 // ── PWA ──────────────────────────────────────────────────────
 function useInstallPrompt() {
   const [prompt, setPrompt] = useState(null)
-  const [isIOS, setIsIOS] = useState(false)
   const [dismissed, setDismissed] = useState(
     () => localStorage.getItem('pwa_install_dismissed') === '1'
   )
   const isInstalled = window.matchMedia('(display-mode: standalone)').matches
     || window.navigator.standalone === true
+  // 렌더 시점에 즉시 감지
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream
+  const isMobile = isIOS || /android/i.test(navigator.userAgent)
 
   useEffect(() => {
     if (isInstalled || dismissed) return
-    const ios = /iphone|ipad|ipod/i.test(navigator.userAgent) && !window.MSStream
-    setIsIOS(ios)
     const handler = (e) => { e.preventDefault(); setPrompt(e) }
     window.addEventListener('beforeinstallprompt', handler)
     return () => window.removeEventListener('beforeinstallprompt', handler)
@@ -59,7 +59,9 @@ function useInstallPrompt() {
     localStorage.setItem('pwa_install_dismissed', '1')
     setDismissed(true); setPrompt(null)
   }
-  return { show: !isInstalled && !dismissed && (prompt || isIOS), isIOS, install, dismiss }
+  // 모바일이면 prompt 이벤트 없어도 바로 표시 (iOS 포함)
+  const show = !isInstalled && !dismissed && isMobile
+  return { show, isIOS, install: prompt ? install : null, dismiss }
 }
 
 function InstallBanner({ isIOS, onInstall, onDismiss }) {
@@ -89,11 +91,15 @@ function InstallBanner({ isIOS, onInstall, onDismiss }) {
         <div style={{ marginTop: 10, fontSize: 13, color: C.text, lineHeight: 1.6 }}>
           Safari 하단 <strong>공유(⬆️)</strong> → <strong>"홈 화면에 추가"</strong>
         </div>
-      ) : (
+      ) : onInstall ? (
         <button onClick={onInstall} className="btn-sketch" style={{
           marginTop: 12, width: '100%', padding: '11px 0',
           fontSize: 15, fontWeight: 700,
         }}>홈 화면에 추가하기 ✏️</button>
+      ) : (
+        <div style={{ marginTop: 10, fontSize: 13, color: C.text, lineHeight: 1.6 }}>
+          브라우저 메뉴 → <strong>"홈 화면에 추가"</strong> 또는 <strong>"앱 설치"</strong>
+        </div>
       )}
     </div>
   )
