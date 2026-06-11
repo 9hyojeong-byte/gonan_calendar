@@ -43,7 +43,14 @@ function useInstallPrompt() {
 
   useEffect(() => {
     if (isInstalled || dismissed) return
-    const handler = (e) => { e.preventDefault(); setPrompt(e) }
+    const handler = (e) => {
+      e.preventDefault()
+      // 네이티브 설치 다이얼로그 즉시 표시
+      e.prompt()
+      e.userChoice.then(({ outcome }) => {
+        if (outcome === 'accepted') dismiss()
+      })
+    }
     window.addEventListener('beforeinstallprompt', handler)
     return () => window.removeEventListener('beforeinstallprompt', handler)
   }, [isInstalled, dismissed])
