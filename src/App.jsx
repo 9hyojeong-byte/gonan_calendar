@@ -224,7 +224,7 @@ function Header({ view, onBack, onSync, syncing, isDesktop }) {
       position: 'fixed', top: 0, left: 0, right: 0, zIndex: 10,
     }}>
       <div style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        position: 'relative', display: 'flex', alignItems: 'center',
         maxWidth: isDesktop ? 1200 : '100%', margin: '0 auto',
       }}>
         {/* 뒤로가기 + 히든 탭 영역 */}
@@ -247,22 +247,25 @@ function Header({ view, onBack, onSync, syncing, isDesktop }) {
           }} className={onBack ? 'btn-muted' : ''}>←</button>
         </div>
 
-        {/* 타이틀 */}
-        <div style={{ textAlign: 'center' }}>
+        {/* 타이틀 — 절대 가운데 고정 */}
+        <div style={{
+          position: 'absolute', left: 0, right: 0,
+          display: 'flex', justifyContent: 'center', alignItems: 'center',
+          pointerEvents: 'none',
+        }}>
           {isCalendar ? (
             <h1 style={{
               fontSize: isDesktop ? 24 : 20, fontWeight: 700,
               color: C.text, lineHeight: 1,
               transform: 'rotate(-1deg)', display: 'inline-block',
+              margin: 0,
             }}>📆고난 캘린더🌄</h1>
           ) : (
-            <h2 style={{ fontSize: isDesktop ? 20 : 17, fontWeight: 700, color: C.text }}>
+            <h2 style={{ fontSize: isDesktop ? 20 : 17, fontWeight: 700, color: C.text, margin: 0 }}>
               여행 상세 📋
             </h2>
           )}
         </div>
-
-        {/* 새로 불러오기 버튼 — 6시간 자동 sync 중이므로 숨김 */}
       </div>
     </div>
   )
