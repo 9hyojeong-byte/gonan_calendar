@@ -315,11 +315,6 @@ function AdminModal({ onClose }) {
                 title: '이벤트 바',
                 body: '여러 날에 걸친 일정은 캘린더에서 가로 막대로 표시돼요. 해당 주 안에서 날짜 범위만큼 길게 이어져요. 같은 날 일정이 1개뿐이면 막대가 두 배 높이로 크게 표시돼요.',
               },
-              {
-                emoji: '📲',
-                title: 'PWA 설치',
-                body: '홈 화면에 추가하면 앱처럼 사용할 수 있어요. Safari(iOS)에서는 공유 → "홈 화면에 추가", Android/Chrome에서는 설치 배너를 이용해요.',
-              },
             ].map(({ emoji, title, body }) => (
               <div key={title} style={{
                 background: C.white, border: `2px solid ${C.border}`,
