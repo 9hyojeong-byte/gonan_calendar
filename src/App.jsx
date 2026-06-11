@@ -67,9 +67,9 @@ function InstallGuideModal({ isIOS, onClose }) {
         { icon: '3️⃣', text: <>오른쪽 상단 <strong>"추가"</strong> 를 탭하면 완료!</> },
       ]
     : [
-        { icon: '1️⃣', text: <>브라우저 우측 상단 <strong>메뉴(⋮)</strong> 를 탭해요</> },
-        { icon: '2️⃣', text: <><strong>"홈 화면에 추가"</strong> 또는 <strong>"앱 설치"</strong> 를 선택해요</> },
-        { icon: '3️⃣', text: <>확인을 누르면 홈 화면에 아이콘이 생겨요!</> },
+        { icon: '1️⃣', text: <>브라우저 우측 하단 <strong>메뉴(⋮)</strong> 를 탭해요</> },
+        { icon: '2️⃣', text: <><strong>"현재 페이지 추가"</strong> 를 누른 다음, <strong>"홈 화면"</strong> 을 선택해요</> },
+        { icon: '3️⃣', text: <>추가를 누르면 누르면 홈 화면에 아이콘이 생겨요!</> },
       ]
 
   return (
