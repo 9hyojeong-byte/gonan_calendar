@@ -663,17 +663,23 @@ function Calendar({ year, month, events, selectedDate, onSelectDate, onMonthChan
                             transition: 'background 0.15s',
                           }}
                         >
+                          {/* 오늘 날짜 — 셀 전체 빨간 테두리 (이벤트 바 아래) */}
+                          {isToday && (
+                            <div style={{
+                              position: 'absolute', inset: '1px 2px',
+                              border: `2px solid ${C.accent}`,
+                              borderRadius: 6,
+                              zIndex: 1, pointerEvents: 'none',
+                            }} />
+                          )}
                           <div style={{
                             position: 'absolute', top: 4, left: '50%', transform: 'translateX(-50%)',
                             width: 28, height: 28,
-                            borderRadius: isToday ? '50%' : 'none',
-                            border: isToday ? `2px solid ${C.accent}` : 'none',
-                            background: isToday ? C.accent : 'transparent',
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
                             zIndex: 2,
                             fontWeight: isToday ? 700 : isSel ? 800 : 400,
                             fontSize: 13,
-                            color: isToday ? '#fff' : isSel ? '#7a6000' : dow === 6 ? C.accent : dow === 5 ? C.accentBlue : C.text,
+                            color: isToday ? C.accent : isSel ? '#7a6000' : dow === 6 ? C.accent : dow === 5 ? C.accentBlue : C.text,
                             fontFamily: isToday || isSel ? "'Noto Sans KR', 'Kalam', cursive" : "'Noto Sans KR', 'Patrick Hand', cursive",
                           }}>{d}</div>
 
