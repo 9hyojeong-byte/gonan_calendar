@@ -414,6 +414,20 @@ function Header({ view, onBack, onSync, syncing, isDesktop }) {
               </h2>
             )}
           </div>
+
+          {/* 물음표 버튼 — 우측 끝 */}
+          <button
+            onClick={() => setShowAdmin(true)}
+            style={{
+              marginLeft: 'auto', width: 38, height: 38, flexShrink: 0,
+              borderRadius: R.wobblyMd, border: `3px solid ${C.border}`,
+              background: C.muted, boxShadow: S.small,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 17, fontWeight: 900, color: C.text,
+              position: 'relative', zIndex: 2,
+            }}
+            className="btn-muted"
+          >?</button>
         </div>
       </div>
 
