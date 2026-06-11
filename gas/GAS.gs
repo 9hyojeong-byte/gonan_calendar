@@ -212,7 +212,7 @@ function syncSomoimToSheet(sheet) {
 
   let upserted = 0;
   for (const ev of scraped) {
-    const id = sha256Hex16(ev.title + '|' + ev.dtstart);
+    const id = sha256Hex16(ev.author + '|' + ev.dtstart + '|' + (ev.dtend || ev.dtstart));
 
     // content: 장소 + 집결장소 조합
     const contentParts = [];
