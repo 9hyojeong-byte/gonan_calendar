@@ -262,25 +262,7 @@ function Header({ view, onBack, onSync, syncing, isDesktop }) {
           )}
         </div>
 
-        {/* 새로 불러오기 버튼 */}
-        <button
-          onClick={onSync}
-          disabled={syncing}
-          className="btn-sketch"
-          title="소모임에서 새 일정 불러오기"
-          style={{
-            padding: isDesktop ? '8px 14px' : '7px 10px',
-            fontSize: isDesktop ? 13 : 12, fontWeight: 700,
-            flexShrink: 0, opacity: syncing ? 0.6 : 1,
-            display: 'flex', alignItems: 'center', gap: 4,
-          }}
-        >
-          <span style={{
-            display: 'inline-block',
-            animation: syncing ? '_spin 1s linear infinite' : 'none',
-          }}>🔄</span>
-          {isDesktop && (syncing ? '불러오는 중...' : '새로 불러오기')}
-        </button>
+        {/* 새로 불러오기 버튼 — 6시간 자동 sync 중이므로 숨김 */}
       </div>
     </div>
   )
@@ -628,7 +610,7 @@ function EventList({ date, year, month, events, onSelect }) {
       <p style={{ fontWeight: 700, fontSize: 16, color: '#555', fontFamily: "'Noto Sans KR', 'Kalam', cursive" }}>
         {isMonthView ? '이 달엔 일정이 없어요!' : '이 날엔 일정이 없어요!'}
       </p>
-      {isMonthView && <p style={{ fontSize: 13, color: '#888' }}>🔄 새로 불러오기 버튼으로 최신 일정을 가져와보세요</p>}
+      {isMonthView && <p style={{ fontSize: 13, color: '#888' }}>소모임 게시글이 자동으로 반영돼요 ☁️</p>}
     </div>
   )
 
