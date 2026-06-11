@@ -120,7 +120,7 @@ function useIsDesktop() {
 }
 
 // ── GAS ───────────────────────────────────────────────────────
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbxdZ-akkzcyh5J06rt260Y98WezYCWBJHBV4wsXAZBAZP-Uehviv7PnzqNld1me4m4hyw/exec'
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbzWI5FZV1WApQhLQhcNlXxRTeHxWmwgGA-EziNxxIqblly4K1TvX3Dfnc7YHwE8HeDVTw/exec'
 
 function jsonpCall(params, timeoutMs = 15000) {
   return new Promise((resolve, reject) => {
@@ -763,7 +763,15 @@ function Calendar({ year, month, events, selectedDate, onSelectDate, onMonthChan
 }
 
 // ── 일정 목록 ────────────────────────────────────────────────
-function EventList({ date, year, month, events, onSelect }) {
+function fmtSyncTime(iso) {
+  if (!iso) return null
+  // KST = UTC+9
+  const kst = new Date(new Date(iso).getTime() + 9 * 60 * 60 * 1000)
+  const pad = n => String(n).padStart(2, '0')
+  return `${kst.getUTCFullYear()}.${pad(kst.getUTCMonth()+1)}.${pad(kst.getUTCDate())} ${pad(kst.getUTCHours())}:${pad(kst.getUTCMinutes())}`
+}
+
+function EventList({ date, year, month, events, onSelect, lastSynced }) {
   // 날짜 선택 없으면 해당 월 전체 일정 표시
   const isMonthView = !date
   const monthStart = isMonthView ? toDateStr(year, month, 1) : null
@@ -782,6 +790,7 @@ function EventList({ date, year, month, events, onSelect }) {
         {isMonthView ? '이 달엔 일정이 없어요!' : '이 날엔 일정이 없어요!'}
       </p>
       {isMonthView && <p style={{ fontSize: 13, color: '#888' }}>소모임 게시글이 자동으로 반영돼요 ☁️</p>}
+      {lastSynced && <p style={{ fontSize: 11, color: '#ccc', marginTop: 8 }}>마지막 업데이트 {fmtSyncTime(lastSynced)}</p>}
     </div>
   )
 
@@ -792,7 +801,7 @@ function EventList({ date, year, month, events, onSelect }) {
   return (
     <div style={{ padding: '16px 16px 32px' }}>
       {/* 날짜/월 라벨 */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: lastSynced ? 6 : 16 }}>
         <div style={{
           background: isMonthView ? C.accentBlue : C.accent, color: '#fff',
           border: `2px solid ${C.border}`, borderRadius: R.tag,
@@ -803,6 +812,11 @@ function EventList({ date, year, month, events, onSelect }) {
         }}>{labelText}</div>
         <span style={{ fontSize: 12, color: '#888' }}>✏️ {filtered.length}개</span>
       </div>
+      {lastSynced && (
+        <p style={{ fontSize: 11, color: '#ccc', margin: '0 0 14px', textAlign: 'right' }}>
+          마지막 업데이트 {fmtSyncTime(lastSynced)}
+        </p>
+      )}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
         {filtered.map((ev, i) => {
@@ -1000,12 +1014,15 @@ export default function App() {
   const [view, setView] = useState(VIEW.CALENDAR)
   const [selectedEvent, setSelectedEvent] = useState(null)
   const [toast, setToast] = useState(null)
+  const [lastSynced, setLastSynced] = useState(null)
 
   useEffect(() => {
     gasGet()
       .then(res => {
-        if (res.status === 'ok') setEvents(res.data)
-        else showToast('❌ 데이터를 불러오지 못했어요')
+        if (res.status === 'ok') {
+          setEvents(res.data)
+          if (res.lastSynced) setLastSynced(res.lastSynced)
+        } else showToast('❌ 데이터를 불러오지 못했어요')
       })
       .catch(() => showToast('❌ 서버 연결 실패'))
       .finally(() => setLoading(false))
@@ -1030,6 +1047,7 @@ export default function App() {
       const res = await gasSync()
       if (res.status === 'ok') {
         setEvents(res.data)
+        if (res.lastSynced) setLastSynced(res.lastSynced)
         showToast(`✅ ${res.upserted}개 일정을 불러왔어요!`)
       } else {
         showToast('❌ 불러오기 실패')
@@ -1081,7 +1099,7 @@ export default function App() {
                   isDesktop={false}
                 />
                 <div style={{ marginTop: 8 }}>
-                  <EventList date={selectedDate} year={year} month={month} events={events} onSelect={handleSelectEvent} />
+                  <EventList date={selectedDate} year={year} month={month} events={events} onSelect={handleSelectEvent} lastSynced={lastSynced} />
                 </div>
               </>
             )}
@@ -1117,7 +1135,7 @@ export default function App() {
                       })() : `📋 ${year}년 ${month + 1}월 전체`}
                     </h3>
                   </div>
-                  <EventList date={selectedDate} year={year} month={month} events={events} onSelect={handleSelectEvent} />
+                  <EventList date={selectedDate} year={year} month={month} events={events} onSelect={handleSelectEvent} lastSynced={lastSynced} />
                 </div>
               </div>
             )}

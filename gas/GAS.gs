@@ -202,6 +202,8 @@ function scrapeSomoimEvents() {
 function syncSomoimToSheet(sheet) {
   const scraped = scrapeSomoimEvents();
   const now = new Date().toISOString();
+  // 마지막 sync 시간 저장
+  PropertiesService.getScriptProperties().setProperty('lastSynced', now);
 
   const idToRow = {};
   const lastRow = sheet.getLastRow();
@@ -255,14 +257,16 @@ function doGet(e) {
 
     // ── LIST ────────────────────────────────────────────────
     if (action === 'list') {
-      return makeResponse({ status: 'ok', data: getAllRows(sheet) }, callback);
+      const lastSynced = PropertiesService.getScriptProperties().getProperty('lastSynced') || null;
+      return makeResponse({ status: 'ok', data: getAllRows(sheet), lastSynced }, callback);
     }
 
     // ── SYNC (소모임 스크래핑 → 시트 갱신) ──────────────────
     if (action === 'sync') {
       const result = syncSomoimToSheet(sheet);
       const data   = getAllRows(sheet);
-      return makeResponse({ status: 'ok', scraped: result.scraped, upserted: result.upserted, data }, callback);
+      const lastSynced = PropertiesService.getScriptProperties().getProperty('lastSynced') || null;
+      return makeResponse({ status: 'ok', scraped: result.scraped, upserted: result.upserted, data, lastSynced }, callback);
     }
 
     return makeResponse({ status: 'error', message: '알 수 없는 action: ' + action }, callback);
