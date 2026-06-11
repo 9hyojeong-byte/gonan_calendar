@@ -282,7 +282,7 @@ function Spinner({ fullPage }) {
     <div style={{ textAlign: 'center', padding: 40 }}>
       <style>{`
         @keyframes _spin { to { transform: rotate(360deg) } }
-        @keyframes _bounce { 0%,100% { transform: translate(calc(-50% + 2px),-50%) translateY(0) } 50% { transform: translate(calc(-50% + 2px),-50%) translateY(-6px) } }
+        @keyframes _bounce { 0%,100% { transform: translate(calc(-50% + 4px),calc(-50% + 2px)) translateY(0) } 50% { transform: translate(calc(-50% + 4px),calc(-50% + 2px)) translateY(-6px) } }
         .sp-ring { animation: _spin 1s linear infinite !important; }
         .sp-emoji { animation: _bounce 0.8s ease-in-out infinite !important; }
       `}</style>
