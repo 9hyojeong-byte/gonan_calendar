@@ -19,9 +19,9 @@ export default defineConfig({
         orientation: 'portrait',
         start_url: '/',
         icons: [
-          { src: 'icons/icon_toto_margin.png', sizes: '192x192', type: 'image/svg+xml' },
-          { src: 'icons/icon_toto_margin.png', sizes: '512x512', type: 'image/svg+xml' },
-          { src: 'icons/icon_toto_margin.png', sizes: '512x512', type: 'image/svg+xml', purpose: 'maskable' },
+          { src: 'icons/gonan_icon.png', sizes: '192x192', type: 'image/svg+xml' },
+          { src: 'icons/gonan_icon.png', sizes: '512x512', type: 'image/svg+xml' },
+          { src: 'icons/gonan_icon.png', sizes: '512x512', type: 'image/svg+xml', purpose: 'maskable' },
         ],
       },
       workbox: {
