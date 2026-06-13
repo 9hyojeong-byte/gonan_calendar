@@ -10,8 +10,8 @@ export default defineConfig({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.ico', 'icons/*.png'],
       manifest: {
-        name: '고난크루',
-        short_name: '고난크루',
+        name: '고난크루 모임 일정 캘린더',
+        short_name: '고난캘린더',
         description: '고난크루 모임 일정 캘린더',
         theme_color: '#2d6a4f',
         background_color: '#f0faf3',
