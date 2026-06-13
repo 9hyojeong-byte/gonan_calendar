@@ -120,7 +120,7 @@ function useIsDesktop() {
 }
 
 // ── GAS ───────────────────────────────────────────────────────
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbyy-h5AUBFmxKfLTcs239pHFdHjMRaVBvjvwn7EaaR4-rtWVFfAJfxapaIbtkaqzM_X/exec'
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbxVzU1U2sUgzsGd4F-e-yh7VfqEhYSvPi_S3517EVnLZx29U2jmtNCwQO6cleJ_UQQzpQ/exec'
 
 function jsonpCall(params, timeoutMs = 15000) {
   return new Promise((resolve, reject) => {
@@ -305,12 +305,12 @@ function AdminModal({ onClose }) {
               {
                 emoji: '⏱️',
                 title: '자동 데이터 수집',
-                body: '[관심사 공유]에 공지로 등록된 4개의 글을 6시간마다 자동으로 가져와요. 가져온 시간은 일정리스트 위에 회색글씨로 표시됩니다.',
+                body: '[관심사 공유]에 공지로 등록된 4개의 글을 6시간마다 자동으로 가져와요. 자동 수집이 실행된 시간은 일정리스트 위에 회색글씨로 표시됩니다.',
               },
               {
                 emoji: '✅ ',
                 title: '날짜를 잘 써야 수집되요',
-                body: '일정 날짜는 2026.12.31(월)~01.01(일) 형식으로 써주세요. 연도가 바뀌는 일정도 잘 인식해요.',
+                body: '일정 날짜는 2026.12.31(월)~01.03(목) 형식으로 써주세요. 연도가 바뀌는 일정도 잘 인식해요.',
               },
               {
                 emoji: '🔄',
@@ -318,19 +318,9 @@ function AdminModal({ onClose }) {
                 body: '게시글 제목이나 내용이 바뀌어도, 작성자 · 일정 시작일 · 일정 종료일이 동일하면 같은 일정으로 인식해서 자동으로 업데이트돼요. 중복 등록 걱정 없어요!',
               },
               {
-                emoji: '📅',
-                title: '날짜 선택',
-                body: '캘린더에서 날짜를 탭하면 해당 날짜의 일정 목록이 아래에 펼쳐져요. 같은 날짜를 다시 탭하면 선택이 해제돼요.',
-              },
-              {
-                emoji: '🎨',
-                title: '일정 색상',
-                body: '각 일정의 색상은 일정 ID를 기반으로 자동 배정돼요. 매번 같은 색으로 표시돼요.',
-              },
-              {
-                emoji: '📌',
-                title: '이벤트 바',
-                body: '여러 날에 걸친 일정은 캘린더에서 가로 막대로 표시돼요. 해당 주 안에서 날짜 범위만큼 길게 이어져요. 같은 날 일정이 1개뿐이면 막대가 두 배 높이로 크게 표시돼요.',
+                emoji: '😇',
+                title: '함께 만들었어요',
+                body: '만든 이 : 쿠효🐯 / QC : 윤브로 / 앱 아이콘 디자인 : 최그림 / 기술지원 : 최술사',
               },
             ].map(({ emoji, title, body }) => (
               <div key={title} style={{
