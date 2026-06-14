@@ -120,7 +120,7 @@ function useIsDesktop() {
 }
 
 // ── GAS ───────────────────────────────────────────────────────
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbyhMvEOpK_l3hKK73AxAAgds4RT4x-UNdaqVetU2dX3QSF4S1oOs_OEh0piGdL3jRSLzg/exec'
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbxRsQTn5LFMwjbHnae0KZ7BaG7qyHVe9zn2cf1kI1vBj5gKOShD3X0H0713P5SDTxfjug/exec'
 
 function jsonpCall(params, timeoutMs = 15000) {
   return new Promise((resolve, reject) => {
@@ -146,6 +146,7 @@ function jsonpCall(params, timeoutMs = 15000) {
 const gasGet    = ()     => jsonpCall({ action: 'list' })
 const gasSync   = ()     => jsonpCall({ action: 'sync' })
 const gasDelete = (id)   => jsonpCall({ action: 'delete', id })
+const gasAdd    = (data) => jsonpCall({ action: 'add', ...data })
 
 // ── 유틸 ─────────────────────────────────────────────────────
 const PALETTE = [
@@ -204,7 +205,7 @@ function linkify(text) {
   )
 }
 
-const VIEW = { CALENDAR: 'calendar', DETAIL: 'detail' }
+const VIEW = { CALENDAR: 'calendar', DETAIL: 'detail', ADD: 'add' }
 const DAYS_KR = ['월', '화', '수', '목', '금', '토', '일']
 const MAX_SLOTS = 3
 
@@ -1106,6 +1107,168 @@ function DeleteConfirmModal({ onConfirm, onCancel }) {
   )
 }
 
+// ── 일정 등록 폼 ─────────────────────────────────────────────
+function EventAdd({ defaultDate, onSave, onCancel, showToast }) {
+  const [form, setForm] = useState({
+    title: '',
+    startDate: defaultDate || '',
+    endDate: defaultDate || '',
+    leader: '',
+    content: '',
+  })
+  const [saving, setSaving] = useState(false)
+
+  function set(key, val) { setForm(prev => ({ ...prev, [key]: val })) }
+
+  async function handleSubmit(e) {
+    e.preventDefault()
+    if (!form.title.trim()) { showToast('❗ 제목을 입력해주세요'); return }
+    if (!form.startDate) { showToast('❗ 시작일을 입력해주세요'); return }
+    if (!form.endDate) { showToast('❗ 종료일을 입력해주세요'); return }
+    if (form.endDate < form.startDate) { showToast('❗ 종료일이 시작일보다 빠를 수 없어요'); return }
+    setSaving(true)
+    try {
+      const res = await gasAdd({
+        title: form.title.trim(),
+        startDate: form.startDate,
+        endDate: form.endDate,
+        leader: form.leader.trim(),
+        content: form.content.trim(),
+      })
+      if (res.status === 'ok') {
+        showToast('✅ 일정이 등록됐어요!')
+        onSave(res.data)
+      } else {
+        showToast('❌ 등록 실패: ' + (res.message || ''))
+      }
+    } catch {
+      showToast('❌ 서버 연결 실패')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const inputStyle = {
+    width: '100%', padding: '11px 14px', fontSize: 15,
+    border: `2px solid ${C.border}`, borderRadius: R.wobblyMd,
+    fontFamily: "'Noto Sans KR', 'Patrick Hand', cursive",
+    background: C.white, color: C.text, boxSizing: 'border-box',
+    outline: 'none',
+  }
+  const labelStyle = {
+    display: 'block', fontSize: 12, fontWeight: 700,
+    color: C.accentBlue, marginBottom: 6,
+    fontFamily: "'Noto Sans KR', 'Kalam', cursive",
+    textTransform: 'uppercase', letterSpacing: '0.05em',
+  }
+
+  return (
+    <div style={{ flex: 1, padding: '20px 16px 100px' }}>
+      {/* 타이틀 카드 */}
+      <div style={{
+        background: C.yellow, border: `3px solid ${C.border}`,
+        borderRadius: R.wobblyLg, boxShadow: S.large,
+        padding: '24px 20px', marginBottom: 20,
+        position: 'relative', transform: 'rotate(-0.5deg)',
+        textAlign: 'center',
+      }}>
+        <div style={{ position: 'absolute', top: -10, left: '50%', transform: 'translateX(-50%)', width: 18, height: 18, borderRadius: '50%', background: C.accent, border: `3px solid ${C.border}`, boxShadow: '2px 2px 0px #2d2d2d' }} />
+        <div style={{ fontSize: 32, marginBottom: 6 }}>📝</div>
+        <h2 style={{ fontSize: 20, fontWeight: 700, color: C.text, margin: 0 }}>일정 등록</h2>
+      </div>
+
+      {/* 폼 카드 */}
+      <form onSubmit={handleSubmit}>
+        <div style={{
+          background: C.white, border: `3px solid ${C.border}`,
+          borderRadius: R.wobblyMd, boxShadow: S.base,
+          padding: '20px 18px', marginBottom: 16,
+          transform: 'rotate(0.3deg)',
+          display: 'flex', flexDirection: 'column', gap: 16,
+        }}>
+          <div>
+            <label style={labelStyle}>✏️ 제목 *</label>
+            <input
+              style={inputStyle}
+              value={form.title}
+              onChange={e => set('title', e.target.value)}
+              placeholder="일정 제목을 입력하세요"
+              maxLength={100}
+            />
+          </div>
+
+          <div style={{ display: 'flex', gap: 10 }}>
+            <div style={{ flex: 1 }}>
+              <label style={labelStyle}>📅 시작일 *</label>
+              <input
+                type="date"
+                style={inputStyle}
+                value={form.startDate}
+                onChange={e => set('startDate', e.target.value)}
+              />
+            </div>
+            <div style={{ flex: 1 }}>
+              <label style={labelStyle}>📅 종료일 *</label>
+              <input
+                type="date"
+                style={inputStyle}
+                value={form.endDate}
+                onChange={e => set('endDate', e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div>
+            <label style={labelStyle}>👤 주최자</label>
+            <input
+              style={inputStyle}
+              value={form.leader}
+              onChange={e => set('leader', e.target.value)}
+              placeholder="주최자 이름 (선택)"
+              maxLength={50}
+            />
+          </div>
+
+          <div>
+            <label style={labelStyle}>📝 내용</label>
+            <textarea
+              style={{ ...inputStyle, minHeight: 100, resize: 'vertical' }}
+              value={form.content}
+              onChange={e => set('content', e.target.value)}
+              placeholder="일정 내용을 입력하세요 (선택)"
+              maxLength={1000}
+            />
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', gap: 10 }}>
+          <button
+            type="button"
+            onClick={onCancel}
+            className="btn-muted"
+            style={{ flex: 1, padding: '13px', fontSize: 14, fontWeight: 700 }}
+          >
+            취소
+          </button>
+          <button
+            type="submit"
+            disabled={saving}
+            style={{
+              flex: 2, padding: '13px', fontSize: 14, fontWeight: 700,
+              background: saving ? '#aaa' : C.accent, color: '#fff',
+              border: `3px solid ${C.border}`, borderRadius: R.wobblyMd,
+              boxShadow: S.small, cursor: saving ? 'not-allowed' : 'pointer',
+              fontFamily: 'inherit',
+            }}
+          >
+            {saving ? '등록 중...' : '✅ 등록하기'}
+          </button>
+        </div>
+      </form>
+    </div>
+  )
+}
+
 // ── 토스트 ───────────────────────────────────────────────────
 function Toast({ msg }) {
   return (
@@ -1134,6 +1297,8 @@ export default function App() {
   const [toast, setToast] = useState(null)
   const [lastSynced, setLastSynced] = useState(null)
   const [showAll, setShowAll] = useState(false)
+  const [addDate, setAddDate] = useState(null)
+  const [dateTapCount, setDateTapCount] = useState(0)
 
   useEffect(() => {
     gasGet()
@@ -1156,7 +1321,18 @@ export default function App() {
     setMonth(m); setYear(y); setSelectedDate(null); setShowAll(false)
   }
 
-  function handleSelectDate(date) { setSelectedDate(prev => prev === date ? null : date); setShowAll(false) }
+  function handleSelectDate(date) {
+    setSelectedDate(prev => prev === date ? null : date)
+    setShowAll(false)
+    const next = dateTapCount + 1
+    if (next >= 10) {
+      setDateTapCount(0)
+      setAddDate(date)
+      setView(VIEW.ADD)
+    } else {
+      setDateTapCount(next)
+    }
+  }
   function handleSelectEvent(ev) { setSelectedEvent(ev); setView(VIEW.DETAIL) }
 
   async function handleDeleteEvent(id) {
@@ -1198,7 +1374,7 @@ export default function App() {
   const { canInstall, isInstalled, isIOS, hasNativePrompt, install } = useInstallPrompt()
   const [showInstallGuide, setShowInstallGuide] = useState(false)
 
-  const onBack = view === VIEW.DETAIL ? () => setView(VIEW.CALENDAR) : null
+  const onBack = (view === VIEW.DETAIL || view === VIEW.ADD) ? () => setView(VIEW.CALENDAR) : null
 
   const desktopCardStyle = {
     maxWidth: 680, margin: '32px auto', width: '100%',
@@ -1287,6 +1463,28 @@ export default function App() {
                 </div>
               ) : (
                 <EventDetail event={selectedEvent} onDelete={handleDeleteEvent} />
+              )
+            )}
+
+            {view === VIEW.ADD && (
+              isDesktop ? (
+                <div style={{ maxWidth: 680, margin: '0 auto', padding: '32px 40px' }}>
+                  <div style={desktopCardStyle}>
+                    <EventAdd
+                      defaultDate={addDate}
+                      onSave={data => { setEvents(data); setView(VIEW.CALENDAR) }}
+                      onCancel={() => setView(VIEW.CALENDAR)}
+                      showToast={showToast}
+                    />
+                  </div>
+                </div>
+              ) : (
+                <EventAdd
+                  defaultDate={addDate}
+                  onSave={data => { setEvents(data); setView(VIEW.CALENDAR) }}
+                  onCancel={() => setView(VIEW.CALENDAR)}
+                  showToast={showToast}
+                />
               )
             )}
           </>
