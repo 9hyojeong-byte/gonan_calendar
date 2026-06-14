@@ -1164,6 +1164,33 @@ function EventAdd({ defaultDate, onSave, onCancel, showToast }) {
 
   return (
     <div style={{ flex: 1, padding: '20px 16px 100px' }}>
+      {saving && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 500,
+          background: 'rgba(45,45,45,0.55)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          <div style={{
+            background: C.white, border: `3px solid ${C.border}`,
+            borderRadius: R.wobblyLg, boxShadow: S.large,
+            padding: '32px 40px', textAlign: 'center',
+            transform: 'rotate(1deg)',
+          }}>
+            <style>{`@keyframes _add_spin { to { transform: rotate(360deg) } }`}</style>
+            <div style={{
+              width: 48, height: 48, borderRadius: '50%',
+              border: '5px solid #bbf7d0',
+              borderTopColor: '#16a34a',
+              borderRightColor: '#16a34a',
+              animation: '_add_spin 1s linear infinite',
+              margin: '0 auto 16px',
+            }} />
+            <p style={{ fontSize: 15, fontWeight: 700, color: C.text, margin: 0, fontFamily: "'Noto Sans KR', sans-serif" }}>
+              일정을 등록하고 있습니다...
+            </p>
+          </div>
+        </div>
+      )}
       {/* 타이틀 카드 */}
       <div style={{
         background: C.yellow, border: `3px solid ${C.border}`,
