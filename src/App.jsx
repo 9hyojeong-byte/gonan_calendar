@@ -120,7 +120,7 @@ function useIsDesktop() {
 }
 
 // ── GAS ───────────────────────────────────────────────────────
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbxVzU1U2sUgzsGd4F-e-yh7VfqEhYSvPi_S3517EVnLZx29U2jmtNCwQO6cleJ_UQQzpQ/exec'
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbzP_6rGe6LbyMfwtYI9agvyaMw51qk-uj4TAPC4C8N2p9KbjIfbjkg-YAjsoRw9wJ1JRw/exec'
 
 function jsonpCall(params, timeoutMs = 15000) {
   return new Promise((resolve, reject) => {
@@ -757,6 +757,25 @@ function Calendar({ year, month, events, selectedDate, onSelectDate, onMonthChan
   )
 }
 
+function isNewEvent(postedAt) {
+  if (!postedAt || !/^\d{4}-\d{2}-\d{2}T/.test(postedAt)) return false
+  return Date.now() - new Date(postedAt).getTime() < 3 * 86400000
+}
+
+// ISO → KST "M월 D일 H:mm" (상대 시각 레이블이면 그대로 반환)
+function fmtPostedAt(str) {
+  if (!str) return null
+  if (/^\d{4}-\d{2}-\d{2}T/.test(str)) {
+    const kst = new Date(new Date(str).getTime() + 9 * 3600000)
+    const m = kst.getUTCMonth() + 1
+    const d = kst.getUTCDate()
+    const h = kst.getUTCHours()
+    const min = String(kst.getUTCMinutes()).padStart(2, '0')
+    return `${m}월 ${d}일 ${h}:${min}`
+  }
+  return str
+}
+
 // ── 일정 목록 ────────────────────────────────────────────────
 function fmtSyncTime(iso) {
   if (!iso) return null
@@ -766,17 +785,19 @@ function fmtSyncTime(iso) {
   return `${kst.getUTCFullYear()}.${pad(kst.getUTCMonth()+1)}.${pad(kst.getUTCDate())} ${pad(kst.getUTCHours())}:${pad(kst.getUTCMinutes())}`
 }
 
-function EventList({ date, year, month, events, onSelect, lastSynced }) {
+function EventList({ date, year, month, events, onSelect, lastSynced, showAll, onToggleShowAll }) {
   // 날짜 선택 없으면 해당 월 전체 일정 표시
   const isMonthView = !date
   const monthStart = isMonthView ? toDateStr(year, month, 1) : null
   const monthEnd   = isMonthView ? toDateStr(year, month, new Date(year, month + 1, 0).getDate()) : null
 
-  const filtered = events
-    .filter(ev => isMonthView
-      ? ev.startDate <= monthEnd && ev.endDate >= monthStart
-      : eventCoversDate(ev, date))
-    .sort((a, b) => a.startDate < b.startDate ? -1 : 1)
+  const filtered = showAll
+    ? [...events].sort((a, b) => (b.postedAt || '') > (a.postedAt || '') ? 1 : -1)
+    : events
+        .filter(ev => isMonthView
+          ? ev.startDate <= monthEnd && ev.endDate >= monthStart
+          : eventCoversDate(ev, date))
+        .sort((a, b) => a.startDate < b.startDate ? -1 : 1)
 
   if (filtered.length === 0) return (
     <div style={{ textAlign: 'center', padding: '48px 24px' }}>
@@ -789,16 +810,18 @@ function EventList({ date, year, month, events, onSelect, lastSynced }) {
     </div>
   )
 
-  const labelText = isMonthView
-    ? `${year}년 ${month + 1}월`
-    : (() => { const { m, d, dowKr } = formatDate(date); return `${m}월 ${d}일 (${dowKr})` })()
+  const labelText = showAll
+    ? '전체 일정'
+    : isMonthView
+      ? `${year}년 ${month + 1}월`
+      : (() => { const { m, d, dowKr } = formatDate(date); return `${m}월 ${d}일 (${dowKr})` })()
 
   return (
     <div style={{ padding: '16px 16px 32px' }}>
-      {/* 날짜/월 라벨 */}
+      {/* 날짜/월 라벨 + 전체보기 버튼 */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: lastSynced ? 6 : 16 }}>
         <div style={{
-          background: isMonthView ? C.accentBlue : C.accent, color: '#fff',
+          background: showAll ? '#444' : isMonthView ? C.accentBlue : C.accent, color: '#fff',
           border: `2px solid ${C.border}`, borderRadius: R.tag,
           boxShadow: S.small,
           padding: '4px 12px', fontSize: 13, fontWeight: 700,
@@ -806,6 +829,19 @@ function EventList({ date, year, month, events, onSelect, lastSynced }) {
           transform: 'rotate(-1deg)',
         }}>{labelText}</div>
         <span style={{ fontSize: 12, color: '#888' }}>✏️ {filtered.length}개</span>
+        <button
+          onClick={onToggleShowAll}
+          style={{
+            marginLeft: 'auto',
+            background: showAll ? C.border : C.white,
+            color: showAll ? '#fff' : C.text,
+            border: `2px solid ${C.border}`, borderRadius: R.tag,
+            boxShadow: S.small,
+            padding: '4px 10px', fontSize: 11, fontWeight: 700,
+            fontFamily: "'Noto Sans KR', sans-serif",
+            cursor: 'pointer', whiteSpace: 'nowrap',
+          }}
+        >{showAll ? '✕ 전체보기 닫기' : '전체보기 →'}</button>
       </div>
       {lastSynced && (
         <p style={{ fontSize: 11, color: '#ccc', margin: '0 0 14px', textAlign: 'right' }}>
@@ -865,16 +901,32 @@ function EventList({ date, year, month, events, onSelect, lastSynced }) {
                       👤 {ev.leader}
                     </div>
                   )}
-                  <div style={{
-                    fontFamily: "'Noto Sans KR', 'Kalam', cursive", fontWeight: 700,
-                    fontSize: 15, color: C.text, marginBottom: 4,
-                  }}>✈️ {ev.title}</div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                    <span style={{
+                      fontFamily: "'Noto Sans KR', 'Kalam', cursive", fontWeight: 700,
+                      fontSize: 15, color: C.text,
+                    }}>✈️ {ev.title}</span>
+                    {isNewEvent(ev.postedAt) && (
+                      <span style={{
+                        background: C.accent, color: '#fff',
+                        border: `1.5px solid ${C.border}`, borderRadius: R.tag,
+                        padding: '1px 6px', fontSize: 10, fontWeight: 900,
+                        boxShadow: '1px 1px 0px #2d2d2d', letterSpacing: '0.05em',
+                        flexShrink: 0,
+                      }}>NEW</span>
+                    )}
+                  </div>
                   {ev.content && (
                     <div style={{
                       marginTop: 5, fontSize: 12, color: '#666', lineHeight: 1.5,
                       overflow: 'hidden', textOverflow: 'ellipsis',
                       display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
                     }}>{ev.content}</div>
+                  )}
+                  {ev.postedAt && (
+                    <div style={{ marginTop: 5, fontSize: 11, color: '#aaa' }}>
+                      등록일 : {fmtPostedAt(ev.postedAt)}
+                    </div>
                   )}
                 </div>
                 <span style={{ fontSize: 18, color: '#aaa' }}>›</span>
@@ -951,6 +1003,11 @@ function EventDetail({ event }) {
           marginBottom: 10, fontFamily: "'Noto Sans KR', 'Kalam', cursive",
           borderBottom: `2px dashed ${C.muted}`, paddingBottom: 6,
         }}>📝 상세 정보</div>
+        {event.postedAt && (
+          <div style={{ fontSize: 11, color: '#999', marginBottom: 10 }}>
+            등록일 : {fmtPostedAt(event.postedAt)}
+          </div>
+        )}
         <p style={{
           fontSize: 15, color: event.content ? C.text : '#aaa',
           lineHeight: 1.8, whiteSpace: 'pre-wrap', wordBreak: 'break-word',
@@ -1010,6 +1067,7 @@ export default function App() {
   const [selectedEvent, setSelectedEvent] = useState(null)
   const [toast, setToast] = useState(null)
   const [lastSynced, setLastSynced] = useState(null)
+  const [showAll, setShowAll] = useState(false)
 
   useEffect(() => {
     gasGet()
@@ -1029,10 +1087,10 @@ export default function App() {
     let m = month + delta, y = year
     if (m < 0) { m = 11; y-- }
     if (m > 11) { m = 0; y++ }
-    setMonth(m); setYear(y); setSelectedDate(null)
+    setMonth(m); setYear(y); setSelectedDate(null); setShowAll(false)
   }
 
-  function handleSelectDate(date) { setSelectedDate(prev => prev === date ? null : date) }
+  function handleSelectDate(date) { setSelectedDate(prev => prev === date ? null : date); setShowAll(false) }
   function handleSelectEvent(ev) { setSelectedEvent(ev); setView(VIEW.DETAIL) }
 
   async function handleSync() {
@@ -1094,7 +1152,7 @@ export default function App() {
                   isDesktop={false}
                 />
                 <div style={{ marginTop: 8 }}>
-                  <EventList date={selectedDate} year={year} month={month} events={events} onSelect={handleSelectEvent} lastSynced={lastSynced} />
+                  <EventList date={selectedDate} year={year} month={month} events={events} onSelect={handleSelectEvent} lastSynced={lastSynced} showAll={showAll} onToggleShowAll={() => setShowAll(p => !p)} />
                 </div>
               </>
             )}
@@ -1123,14 +1181,17 @@ export default function App() {
                     borderBottom: `2px dashed ${C.border}`,
                   }}>
                     <h3 style={{ fontSize: 15, fontWeight: 700, color: C.text, margin: 0 }}>
-                      {selectedDate ? (() => {
-                        const { m, d, dowKr } = formatDate(selectedDate)
-                        const cnt = events.filter(ev => eventCoversDate(ev, selectedDate)).length
-                        return `📋 ${m}월 ${d}일 (${dowKr}) · ${cnt}개`
-                      })() : `📋 ${year}년 ${month + 1}월 전체`}
+                      {showAll
+                        ? `📋 전체 일정 · ${events.length}개`
+                        : selectedDate ? (() => {
+                            const { m, d, dowKr } = formatDate(selectedDate)
+                            const cnt = events.filter(ev => eventCoversDate(ev, selectedDate)).length
+                            return `📋 ${m}월 ${d}일 (${dowKr}) · ${cnt}개`
+                          })()
+                        : `📋 ${year}년 ${month + 1}월 전체`}
                     </h3>
                   </div>
-                  <EventList date={selectedDate} year={year} month={month} events={events} onSelect={handleSelectEvent} lastSynced={lastSynced} />
+                  <EventList date={selectedDate} year={year} month={month} events={events} onSelect={handleSelectEvent} lastSynced={lastSynced} showAll={showAll} onToggleShowAll={() => setShowAll(p => !p)} />
                 </div>
               </div>
             )}

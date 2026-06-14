@@ -6,7 +6,7 @@
 // ============================================================
 //  시트 컬럼 구조:
 //  1:id  2:startDate  3:endDate  4:title  5:content
-//  6:pwHash  7:createdAt  8:leader  9:participants
+//  6:pwHash  7:createdAt  8:leader  9:postedAt
 // ============================================================
 
 const SHEET_NAME = 'events';
@@ -19,7 +19,7 @@ function initSheet() {
   let sheet = ss.getSheetByName(SHEET_NAME);
   if (!sheet) sheet = ss.insertSheet(SHEET_NAME);
   if (sheet.getLastRow() === 0) {
-    sheet.appendRow(['id', 'startDate', 'endDate', 'title', 'content', 'pwHash', 'createdAt', 'leader', 'participants']);
+    sheet.appendRow(['id', 'startDate', 'endDate', 'title', 'content', 'pwHash', 'createdAt', 'leader', 'postedAt']);
     sheet.getRange(1, 1, 1, COL_COUNT).setFontWeight('bold').setBackground('#d8f3dc');
     sheet.setFrozenRows(1);
     sheet.setColumnWidth(1, 160);
@@ -64,15 +64,15 @@ function getAllRows(sheet) {
     .filter(function(r) { return r[0] !== ''; })
     .map(function(r) {
       return {
-        id:           String(r[0]),
-        startDate:    fmtDate(r[1]),
-        endDate:      fmtDate(r[2]),
-        title:        String(r[3]),
-        content:      String(r[4]),
-        pwHash:       String(r[5]),
-        createdAt:    String(r[6]),
-        leader:       String(r[7] || ''),
-        participants: String(r[8] || ''),
+        id:        String(r[0]),
+        startDate: fmtDate(r[1]),
+        endDate:   fmtDate(r[2]),
+        title:     String(r[3]),
+        content:   String(r[4]),
+        pwHash:    String(r[5]),
+        createdAt: String(r[6]),
+        leader:    String(r[7] || ''),
+        postedAt:  r[8] instanceof Date ? r[8].toISOString() : String(r[8] || ''),
       };
     });
 }
@@ -143,6 +143,19 @@ function extractField(body, labels) {
   );
   const m = body.match(pattern);
   return m ? m[1].trim() : null;
+}
+
+// 소모임 상대 시각 레이블 → ISO 문자열 (스크래핑 시점 기준)
+function resolvePostedAt(label) {
+  const s = label.trim();
+  const now = new Date();
+  if (/방금/.test(s)) return now.toISOString();
+  var m;
+  m = s.match(/(\d+)\s*분\s*전/);   if (m) return new Date(now - +m[1] * 60000).toISOString();
+  m = s.match(/(\d+)\s*시간\s*전/); if (m) return new Date(now - +m[1] * 3600000).toISOString();
+  m = s.match(/(\d+)\s*일\s*전/);   if (m) return new Date(now - +m[1] * 86400000).toISOString();
+  m = s.match(/(\d+)\s*주\s*전/);   if (m) return new Date(now - +m[1] * 604800000).toISOString();
+  return s; // 이미 절대 날짜 형식이면 그대로
 }
 
 function scrapeSomoimEvents() {
@@ -228,10 +241,10 @@ function syncSomoimToSheet(sheet) {
       ev.dtend || ev.dtstart,
       ev.title,
       content,
-      '',          // pwHash 없음
+      '',              // pwHash 없음
       now,
       ev.author || '',
-      '',          // participants 사용 안 함
+      resolvePostedAt(ev.postedAt || ''),  // 소모임 게시물 등록일 (ISO)
     ]];
 
     if (idToRow[id]) {
