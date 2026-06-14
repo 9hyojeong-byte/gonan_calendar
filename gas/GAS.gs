@@ -298,6 +298,27 @@ function doGet(e) {
       return makeResponse({ status: 'ok', data: data }, callback);
     }
 
+    // ── ADD ─────────────────────────────────────────────────
+    if (action === 'add') {
+      var title     = (p.title     || '').trim();
+      var startDate = (p.startDate || '').trim();
+      var endDate   = (p.endDate   || '').trim();
+      var leader    = (p.leader    || '').trim();
+      var content   = (p.content   || '').trim();
+
+      if (!title)     return makeResponse({ status: 'error', message: '제목 필요' }, callback);
+      if (!startDate) return makeResponse({ status: 'error', message: '시작일 필요' }, callback);
+      if (!endDate)   endDate = startDate;
+
+      var now      = new Date().toISOString();
+      var newId    = sha256Hex16(title + '|' + startDate + '|' + now);
+      var newRow   = [newId, startDate, endDate, title, content, '', now, leader, now];
+      sheet.appendRow(newRow);
+
+      var data = getAllRows(sheet);
+      return makeResponse({ status: 'ok', data: data }, callback);
+    }
+
     return makeResponse({ status: 'error', message: '알 수 없는 action: ' + action }, callback);
 
   } catch (err) {
