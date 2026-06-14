@@ -212,11 +212,16 @@ function scrapeSomoimEvents() {
 }
 
 // 소모임 이벤트 → events 시트 upsert
-function syncSomoimToSheet(sheet) {
+function syncSomoimToSheet(sheet, prefix) {
   const scraped = scrapeSomoimEvents();
   const now = new Date().toISOString();
   // 마지막 sync 시간 저장
   PropertiesService.getScriptProperties().setProperty('lastSynced', now);
+
+  // K1 셀에 실행 시각(한국시간) 기록
+  var kst = Utilities.formatDate(new Date(), 'Asia/Seoul', 'yyyy-MM-dd HH:mm:ss');
+  var label = prefix ? prefix + ' ' + kst : kst;
+  sheet.getRange(1, 11).setValue(label);
 
   const idToRow = {};
   const lastRow = sheet.getLastRow();
@@ -276,10 +281,21 @@ function doGet(e) {
 
     // ── SYNC (소모임 스크래핑 → 시트 갱신) ──────────────────
     if (action === 'sync') {
-      const result = syncSomoimToSheet(sheet);
+      const result = syncSomoimToSheet(sheet, '(자동)');
       const data   = getAllRows(sheet);
       const lastSynced = PropertiesService.getScriptProperties().getProperty('lastSynced') || null;
       return makeResponse({ status: 'ok', scraped: result.scraped, upserted: result.upserted, data, lastSynced }, callback);
+    }
+
+    // ── DELETE ──────────────────────────────────────────────
+    if (action === 'delete') {
+      var id = p.id;
+      if (!id) return makeResponse({ status: 'error', message: 'id 필요' }, callback);
+      var rowIdx = findRowById(sheet, id);
+      if (rowIdx === -1) return makeResponse({ status: 'error', message: '해당 일정을 찾을 수 없습니다' }, callback);
+      sheet.deleteRow(rowIdx);
+      var data = getAllRows(sheet);
+      return makeResponse({ status: 'ok', data: data }, callback);
     }
 
     return makeResponse({ status: 'error', message: '알 수 없는 action: ' + action }, callback);
@@ -305,6 +321,12 @@ function testInit() {
 
 function testSync() {
   const sheet = initSheet();
-  const result = syncSomoimToSheet(sheet);
+  const result = syncSomoimToSheet(sheet, '(수동)');
   Logger.log('결과: ' + JSON.stringify(result));
+}
+
+// 시간 기반 트리거에 등록할 함수
+function triggerSync() {
+  const sheet = initSheet();
+  syncSomoimToSheet(sheet, '(자동)');
 }

@@ -120,7 +120,7 @@ function useIsDesktop() {
 }
 
 // ── GAS ───────────────────────────────────────────────────────
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbzP_6rGe6LbyMfwtYI9agvyaMw51qk-uj4TAPC4C8N2p9KbjIfbjkg-YAjsoRw9wJ1JRw/exec'
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbyhMvEOpK_l3hKK73AxAAgds4RT4x-UNdaqVetU2dX3QSF4S1oOs_OEh0piGdL3jRSLzg/exec'
 
 function jsonpCall(params, timeoutMs = 15000) {
   return new Promise((resolve, reject) => {
@@ -143,8 +143,9 @@ function jsonpCall(params, timeoutMs = 15000) {
   })
 }
 
-const gasGet  = ()     => jsonpCall({ action: 'list' })
-const gasSync = ()     => jsonpCall({ action: 'sync' })
+const gasGet    = ()     => jsonpCall({ action: 'list' })
+const gasSync   = ()     => jsonpCall({ action: 'sync' })
+const gasDelete = (id)   => jsonpCall({ action: 'delete', id })
 
 // ── 유틸 ─────────────────────────────────────────────────────
 const PALETTE = [
@@ -305,7 +306,7 @@ function AdminModal({ onClose }) {
               {
                 emoji: '⏱️',
                 title: '자동 데이터 수집',
-                body: '[관심사 공유]에 공지로 등록된 4개의 글을 6시간마다 자동으로 가져와요. 자동 수집이 실행된 시간은 일정리스트 위에 회색글씨로 표시됩니다.',
+                body: '[관심사 공유]에 [공지]로 등록된 4개의 글을 6시간마다 자동으로 가져와요. 자동 수집이 실행된 시간은 일정리스트 위에 회색글씨로 표시됩니다.',
               },
               {
                 emoji: '✅ ',
@@ -940,12 +941,30 @@ function EventList({ date, year, month, events, onSelect, lastSynced, showAll, o
 }
 
 // ── 일정 상세 ────────────────────────────────────────────────
-function EventDetail({ event }) {
+function EventDetail({ event, onDelete }) {
   const nights = dayDiff(event.startDate, event.endDate)
   const color = getEventColor(event)
+  const [tapCount, setTapCount] = useState(0)
+  const [showConfirm, setShowConfirm] = useState(false)
+
+  function handleLeaderTap() {
+    const next = tapCount + 1
+    if (next >= 10) {
+      setTapCount(0)
+      setShowConfirm(true)
+    } else {
+      setTapCount(next)
+    }
+  }
 
   return (
     <div style={{ flex: 1, padding: '20px 16px 100px' }}>
+      {showConfirm && (
+        <DeleteConfirmModal
+          onConfirm={() => { setShowConfirm(false); onDelete && onDelete(event.id) }}
+          onCancel={() => setShowConfirm(false)}
+        />
+      )}
       {/* 타이틀 카드 */}
       <div style={{
         background: C.yellow, border: `3px solid ${C.border}`,
@@ -962,13 +981,17 @@ function EventDetail({ event }) {
         }} />
 
         {event.leader && (
-          <div style={{
-            display: 'inline-flex', alignItems: 'center', gap: 5,
-            background: color, color: '#fff',
-            border: `2px solid ${C.border}`, borderRadius: R.tag,
-            boxShadow: S.small, padding: '3px 10px',
-            fontSize: 12, fontWeight: 700, marginBottom: 8,
-          }}>
+          <div
+            onClick={handleLeaderTap}
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 5,
+              background: color, color: '#fff',
+              border: `2px solid ${C.border}`, borderRadius: R.tag,
+              boxShadow: S.small, padding: '3px 10px',
+              fontSize: 12, fontWeight: 700, marginBottom: 8,
+              cursor: 'pointer', userSelect: 'none',
+            }}
+          >
             👤 {event.leader}
           </div>
         )}
@@ -1040,6 +1063,49 @@ function EventDetail({ event }) {
 
 // ── 비밀번호 모달 ─────────────────────────────────────────────
 
+// ── 삭제 확인 모달 ────────────────────────────────────────────
+function DeleteConfirmModal({ onConfirm, onCancel }) {
+  return (
+    <div
+      style={{ position: 'fixed', inset: 0, background: 'rgba(45,45,45,0.55)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 300, padding: '0 24px' }}
+      onClick={e => e.target === e.currentTarget && onCancel()}
+    >
+      <div style={{
+        width: '100%', maxWidth: 360,
+        background: C.white, border: `3px solid ${C.border}`,
+        borderRadius: R.wobblyLg, boxShadow: S.large,
+        padding: '28px 24px 24px', transform: 'rotate(-1deg)',
+      }}>
+        <div style={{ textAlign: 'center', marginBottom: 20 }}>
+          <div style={{ fontSize: 40, marginBottom: 8 }}>🗑️</div>
+          <h3 style={{ fontSize: 18, fontWeight: 700, color: C.text, marginBottom: 6 }}>일정을 삭제할까요?</h3>
+          <p style={{ fontSize: 13, color: '#888' }}>삭제하면 되돌릴 수 없어요</p>
+        </div>
+        <div style={{ display: 'flex', gap: 10 }}>
+          <button
+            onClick={onCancel}
+            className="btn-muted"
+            style={{ flex: 1, padding: '12px', fontSize: 14, fontWeight: 700 }}
+          >
+            취소
+          </button>
+          <button
+            onClick={onConfirm}
+            style={{
+              flex: 1, padding: '12px', fontSize: 14, fontWeight: 700,
+              background: '#e74c3c', color: '#fff',
+              border: `3px solid ${C.border}`, borderRadius: R.wobblyMd,
+              boxShadow: S.small, cursor: 'pointer', fontFamily: 'inherit',
+            }}
+          >
+            삭제
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ── 토스트 ───────────────────────────────────────────────────
 function Toast({ msg }) {
   return (
@@ -1092,6 +1158,22 @@ export default function App() {
 
   function handleSelectDate(date) { setSelectedDate(prev => prev === date ? null : date); setShowAll(false) }
   function handleSelectEvent(ev) { setSelectedEvent(ev); setView(VIEW.DETAIL) }
+
+  async function handleDeleteEvent(id) {
+    try {
+      const res = await gasDelete(id)
+      if (res.status === 'ok') {
+        setEvents(res.data)
+        setView(VIEW.CALENDAR)
+        setSelectedEvent(null)
+        showToast('🗑️ 일정이 삭제되었어요')
+      } else {
+        showToast('❌ 삭제 실패')
+      }
+    } catch {
+      showToast('❌ 서버 연결 실패')
+    }
+  }
 
   async function handleSync() {
     if (syncing) return
@@ -1200,11 +1282,11 @@ export default function App() {
               isDesktop ? (
                 <div style={{ maxWidth: 1200, margin: '0 auto', padding: '32px 40px' }}>
                   <div style={desktopCardStyle}>
-                    <EventDetail event={selectedEvent} />
+                    <EventDetail event={selectedEvent} onDelete={handleDeleteEvent} />
                   </div>
                 </div>
               ) : (
-                <EventDetail event={selectedEvent} />
+                <EventDetail event={selectedEvent} onDelete={handleDeleteEvent} />
               )
             )}
           </>
