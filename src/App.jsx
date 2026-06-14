@@ -1299,6 +1299,7 @@ export default function App() {
   const [showAll, setShowAll] = useState(false)
   const [addDate, setAddDate] = useState(null)
   const [dateTapCount, setDateTapCount] = useState(0)
+  const [deleting, setDeleting] = useState(false)
 
   useEffect(() => {
     gasGet()
@@ -1336,6 +1337,7 @@ export default function App() {
   function handleSelectEvent(ev) { setSelectedEvent(ev); setView(VIEW.DETAIL) }
 
   async function handleDeleteEvent(id) {
+    setDeleting(true)
     try {
       const res = await gasDelete(id)
       if (res.status === 'ok') {
@@ -1348,6 +1350,8 @@ export default function App() {
       }
     } catch {
       showToast('❌ 서버 연결 실패')
+    } finally {
+      setDeleting(false)
     }
   }
 
@@ -1493,6 +1497,33 @@ export default function App() {
 
       {toast && <Toast msg={toast} />}
       {showInstallGuide && <InstallGuideModal isIOS={isIOS} onClose={() => setShowInstallGuide(false)} />}
+      {deleting && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 500,
+          background: 'rgba(45,45,45,0.55)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          <div style={{
+            background: C.white, border: `3px solid ${C.border}`,
+            borderRadius: R.wobblyLg, boxShadow: S.large,
+            padding: '32px 40px', textAlign: 'center',
+            transform: 'rotate(-1deg)',
+          }}>
+            <style>{`@keyframes _del_spin { to { transform: rotate(360deg) } }`}</style>
+            <div style={{
+              width: 48, height: 48, borderRadius: '50%',
+              border: '5px solid #fca5a5',
+              borderTopColor: C.accent,
+              borderRightColor: C.accent,
+              animation: '_del_spin 1s linear infinite',
+              margin: '0 auto 16px',
+            }} />
+            <p style={{ fontSize: 15, fontWeight: 700, color: C.text, margin: 0, fontFamily: "'Noto Sans KR', sans-serif" }}>
+              일정 삭제 중입니다...
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
