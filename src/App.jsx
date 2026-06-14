@@ -1201,7 +1201,10 @@ function EventAdd({ defaultDate, onSave, onCancel, showToast }) {
       }}>
         <div style={{ position: 'absolute', top: -10, left: '50%', transform: 'translateX(-50%)', width: 18, height: 18, borderRadius: '50%', background: C.accent, border: `3px solid ${C.border}`, boxShadow: '2px 2px 0px #2d2d2d' }} />
         <div style={{ fontSize: 32, marginBottom: 6 }}>📝</div>
-        <h2 style={{ fontSize: 20, fontWeight: 700, color: C.text, margin: 0 }}>일정 등록</h2>
+        <h2 style={{ fontSize: 20, fontWeight: 700, color: C.text, margin: '0 0 8px' }}>일정 등록</h2>
+        <p style={{ fontSize: 12, color: '#888', margin: 0, fontFamily: "'Noto Sans KR', sans-serif" }}>
+          운영진용 히든기능입니다. 벙 일정은 소모임에 등록해주세요 :)
+        </p>
       </div>
 
       {/* 폼 카드 */}
