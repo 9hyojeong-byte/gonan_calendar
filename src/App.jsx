@@ -1080,7 +1080,7 @@ function DeleteConfirmModal({ onConfirm, onCancel }) {
         <div style={{ textAlign: 'center', marginBottom: 20 }}>
           <div style={{ fontSize: 40, marginBottom: 8 }}>🗑️</div>
           <h3 style={{ fontSize: 18, fontWeight: 700, color: C.text, marginBottom: 6 }}>일정을 삭제할까요?</h3>
-          <p style={{ fontSize: 13, color: '#888' }}>삭제하면 되돌릴 수 없어요</p>
+          <p style={{ fontSize: 13, color: '#888' }}>운영진용 히든기능입니다. 일정 삭제는 운영진에게 문의해주세요</p>
         </div>
         <div style={{ display: 'flex', gap: 10 }}>
           <button
