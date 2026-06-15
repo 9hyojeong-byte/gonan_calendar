@@ -105,8 +105,8 @@ function decodeEntities(s) {
     .replace(/&#(\d+);/g, function(_, n) { return String.fromCharCode(+n); });
 }
 
-var RANGE_RE = /(?:(\d{4})\s*년\s*)?(\d{1,2})\s*[\/월]\s*(\d{1,2})\s*일?\s*[~∼–-]\s*(?:(\d{1,2})\s*[\/월]\s*)?(\d{1,2})\s*일?/;
-var SINGLE_RE = /(?:(\d{4})\s*년\s*)?(\d{1,2})\s*[\/월]\s*(\d{1,2})\s*일?/;
+var RANGE_RE = /(?:(\d{4})\s*년\s*)?(\d{1,2})\s*[\/월.]\s*(\d{1,2})\s*(?:\([월화수목금토일]\))?\s*일?\s*[~∼–-]\s*(?:(\d{1,2})\s*[\/월.]\s*)?(\d{1,2})\s*(?:\([월화수목금토일]\))?\s*일?/;
+var SINGLE_RE = /(?:(\d{4})\s*년\s*)?(\d{1,2})\s*[\/월.]\s*(\d{1,2})\s*(?:\([월화수목금토일]\))?\s*일?/;
 
 function fmtDateStr(y, m, d) {
   return y + '-' + String(m).padStart(2, '0') + '-' + String(d).padStart(2, '0');
