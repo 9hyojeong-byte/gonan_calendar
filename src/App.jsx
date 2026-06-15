@@ -212,7 +212,7 @@ const MAX_SLOTS = 3
 const SHEET_URL = 'https://docs.google.com/spreadsheets/d/1I-j29J_sau7mJpjfmXrsyvtK2Xe-NqGByOyW3YNzpNI/edit?gid=2140106036#gid=2140106036'
 
 // ── 어드민 모달 ───────────────────────────────────────────────
-function AdminModal({ onClose }) {
+function AdminModal({ onClose, onSync, syncing }) {
   const [tab, setTab] = useState('menu') // 'menu' | 'help'
 
   return (
@@ -259,6 +259,30 @@ function AdminModal({ onClose }) {
               <div>
                 <div>도움말 보기</div>
                 <div style={{ fontSize: 12, fontWeight: 400, color: '#888', marginTop: 2 }}>캘린더 사용법 & 데이터 동기화 안내</div>
+              </div>
+            </button>
+
+            {/* 소모임 동기화 */}
+            <button
+              onClick={() => { onSync(); onClose() }}
+              disabled={syncing}
+              style={{
+                width: '100%', display: 'flex', alignItems: 'center', gap: 14,
+                background: syncing ? C.muted : C.white, border: `3px solid ${C.border}`,
+                borderRadius: R.wobblyMd, boxShadow: S.base,
+                padding: '14px 18px', marginBottom: 12,
+                fontSize: 15, fontWeight: 700, color: C.text,
+                textAlign: 'left', transition: 'transform 0.1s, box-shadow 0.1s',
+                cursor: syncing ? 'not-allowed' : 'pointer',
+                opacity: syncing ? 0.6 : 1,
+              }}
+              onMouseEnter={e => { if (!syncing) { e.currentTarget.style.transform = 'translate(2px,2px)'; e.currentTarget.style.boxShadow = S.small } }}
+              onMouseLeave={e => { e.currentTarget.style.transform = ''; e.currentTarget.style.boxShadow = S.base }}
+            >
+              <span style={{ fontSize: 24 }}>{syncing ? '⏳' : '🔄'}</span>
+              <div>
+                <div>{syncing ? '동기화 중...' : '소모임 동기화'}</div>
+                <div style={{ fontSize: 12, fontWeight: 400, color: '#888', marginTop: 2 }}>소모임 게시글을 지금 바로 가져와요</div>
               </div>
             </button>
 
@@ -348,7 +372,7 @@ function AdminModal({ onClose }) {
 }
 
 // ── 헤더 ─────────────────────────────────────────────────────
-function Header({ view, onBack, isDesktop, canInstall, onInstall }) {
+function Header({ view, onBack, isDesktop, canInstall, onInstall, onSync, syncing }) {
   const isCalendar = view === VIEW.CALENDAR
   const [showAdmin, setShowAdmin] = useState(false)
 
@@ -425,7 +449,7 @@ function Header({ view, onBack, isDesktop, canInstall, onInstall }) {
         </div>
       </div>
 
-      {showAdmin && <AdminModal onClose={() => setShowAdmin(false)} />}
+      {showAdmin && <AdminModal onClose={() => setShowAdmin(false)} onSync={onSync} syncing={syncing} />}
     </>
   )
 }
@@ -1425,6 +1449,7 @@ export default function App() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100svh' }}>
       <Header view={view} onBack={onBack} isDesktop={isDesktop} canInstall={canInstall}
+        onSync={handleSync} syncing={syncing}
         onInstall={
           isInstalled    ? () => showToast('✅ 이미 설치되어 있습니다!') :
           hasNativePrompt ? install :
@@ -1528,6 +1553,33 @@ export default function App() {
         )}
       </div>
 
+      {syncing && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 500,
+          background: 'rgba(45,45,45,0.55)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          <div style={{
+            background: C.white, border: `3px solid ${C.border}`,
+            borderRadius: R.wobblyLg, boxShadow: S.large,
+            padding: '32px 40px', textAlign: 'center',
+            transform: 'rotate(1deg)',
+          }}>
+            <style>{`@keyframes _sync_spin { to { transform: rotate(360deg) } }`}</style>
+            <div style={{
+              width: 48, height: 48, borderRadius: '50%',
+              border: '5px solid #bfdbfe',
+              borderTopColor: C.accentBlue,
+              borderRightColor: C.accentBlue,
+              animation: '_sync_spin 1s linear infinite',
+              margin: '0 auto 16px',
+            }} />
+            <p style={{ fontSize: 15, fontWeight: 700, color: C.text, margin: 0, fontFamily: "'Noto Sans KR', sans-serif" }}>
+              소모임 동기화 중입니다...
+            </p>
+          </div>
+        </div>
+      )}
       {toast && <Toast msg={toast} />}
       {showInstallGuide && <InstallGuideModal isIOS={isIOS} onClose={() => setShowInstallGuide(false)} />}
       {deleting && (
