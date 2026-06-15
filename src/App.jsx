@@ -120,7 +120,7 @@ function useIsDesktop() {
 }
 
 // ── GAS ───────────────────────────────────────────────────────
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbxAIYQpCjwZzjDTZupeCjG9OWKrt9avu7GzL5y6vkk-4t5J5OHQJjAyu1tThlfo3BQDzA/exec'
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbxPd0Qqx3yjFlnUIAn5otyAbGhVFRio2G2pXaeTOt88RNXpsD5jYhg14uIPbxd4nDO-PA/exec'
 
 function jsonpCall(params, timeoutMs = 15000) {
   return new Promise((resolve, reject) => {
